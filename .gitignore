@@ -1,0 +1,21 @@
+# ------------------------------------------------------------------
+# 이 저장소는 공개(Public)입니다. 실데이터·기밀 파일은 절대 커밋하지 않습니다.
+# ------------------------------------------------------------------
+*.xlsx
+*.xls
+*.xlsm
+*.pdf
+*.csv
+*recovery*
+CI.*
+logo.*
+/data/
+/local-data/
+/private/
+
+# OS / editor
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+node_modules/
