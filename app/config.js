@@ -7,7 +7,7 @@
 // · Local mode: leave API_URL empty — everything stays in this browser (IndexedDB).
 //
 // For testing, a browser can override this with localStorage 'rlc-api' (a URL, or 'local').
-export const API_URL = '';
+export const API_URL = 'https://script.google.com/macros/s/AKfycbxPZeEvEs0_iwd40ksnPsrSuZrmxAaiuVM_HxyGR-YVZmcLdjHVivmOyNupK3b0DPv9Bg/exec';
 
 export function apiUrl() {
   let v = null;
