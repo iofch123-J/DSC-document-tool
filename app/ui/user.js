@@ -2,7 +2,7 @@
 // 제품 구성이 확정되면 그 아래의 조회·PDF 생성 구역이 채워집니다.
 import { h, clear, download, safeName } from './dom.js';
 import { loadCatalog } from '../core/catalog.js';
-import { applyVariant, variantLabel, variantFileTag } from '../core/variant.js';
+import { applyVariant, variantLabel, variantFileTag, hasOption } from '../core/variant.js';
 import {
   conditions, activeWinches, columns, radii, rKey, tableKey, getCell, cellKind, isHighFalls, lastUsedRowIndex, winchTitle,
 } from '../core/model.js';
@@ -386,6 +386,10 @@ function renderView(app, main, m, notes, U, onPaint) {
     return conds.find((c) => c.key === (a.perOutrigger ? `${a.id}|${sel.or}` : `${a.id}|all`));
   };
   const winchKey = () => (sel.winch === 'aux' && auxKey ? auxKey : 'main');
+  // 'Sub Boom 4.5 m' when chosen; just 'Sub Boom', greyed, when the product goes without it
+  const option = (label, v) => (hasOption(v)
+    ? h('span', null, `${label} ${v}`)
+    : h('span', { class: 'off', title: `${label} 없음` }, label));
   const ranges = (a) => (a.ranges || []).map(([p, q]) => `${p}°~${q}°`).join(' · ');
 
   const panel = h('div', { class: 'view-panel' });
@@ -428,7 +432,7 @@ function renderView(app, main, m, notes, U, onPaint) {
         h('div', { class: 'vb-label' }, '아우트리거', !perOr ? h('span', { class: 'vb-note' }, `${a.name}은 전 구간 공통`) : null),
         h('div', { class: 'vp-body' },
           picture(toSvg(outriggerDiagram(orCur ? orCur.pct ?? 1 : 'all'), 'width="100%" preserveAspectRatio="xMidYMid meet"'),
-            orCur ? `아우트리거 ${orCur.name}` : '아우트리거 전 구간', orCur ? `${orCode(orCur, orIdx)}.` : '신장 상태 무관'),
+            orCur ? `${orCode(orCur, orIdx)}.` : '전 구간 공통', orCur ? `아우트리거 ${orCur.name}` : '아우트리거 신장 상태 무관'),
           h('div', { class: 'vb-stack' }, ors.map((o, i) => vbtn({
             on: perOr && o.id === sel.or, disabled: !perOr, label: `${orCode(o, i)}.`,
             title: perOr ? o.name : `${a.name}은 아우트리거 신장 상태와 관계없이 표가 하나입니다`,
@@ -470,14 +474,14 @@ function renderView(app, main, m, notes, U, onPaint) {
 
   main.append(...[
     h('div', { class: 'card view-head' },
-      h('div', null,
-        h('div', { class: 'vh-k' }, '조회 중인 제품'),
+      h('div', { class: 'vh-k' }, '조회 중인 제품'),
+      h('div', { class: 'vh-row' },
         h('div', { class: 'vh-name' }, m.info.name),
-        h('div', { class: 'vh-variant' }, variantLabel(U))),
-      h('table', { class: 'kv vh-kv' },
-        h('tr', null, h('th', null, '문서번호'), h('td', null, m.info.docNo || '—')),
-        h('tr', null, h('th', null, '개정 / 발행일'), h('td', null, `Rev.${m.info.rev || '00'} · ${String(m.info.issueDate || '').replace(/-/g, '.')}`)),
-        h('tr', null, h('th', null, '구성'), h('td', null, `${conds.length}개 조건 · ${activeWinches(m).map((w) => winchTitle(m.settings.winches[w])).join(' + ')}`)))),
+        h('div', { class: 'vh-variant' },
+          option('Sub Winch', U.subWinch), h('span', { class: 'vh-sep' }, '·'), option('Sub Boom', U.subBoom)),
+        h('div', { class: 'vh-rev' },
+          h('span', null, '개정 / 발행일'),
+          h('b', null, [`Rev.${m.info.rev || '00'}`, String(m.info.issueDate || '').replace(/-/g, '.')].filter(Boolean).join(' · '))))),
     notes.length ? h('div', { class: 'infobox col' }, notes.map((n) => h('div', null, n))) : null,
     v.ng ? h('div', { class: 'warnbox' }, `이 기종 데이터에 관리자 검증 NG ${v.ng}건이 있습니다. 배포 전에 관리자에게 확인하세요.`) : null,
     panel,
@@ -590,6 +594,8 @@ function renderIssue(app, main, m, U) {
   syncBtns();
   main.append(h('div', { class: 'pdf-layout' },
     h('div', { class: 'card pdf-opts' },
+      // two halves: details + fields | buttons + result (side by side on mid-width screens)
+      h('div', { class: 'po-a' },
       h('h2', null, '배포 정보'),
       h('table', { class: 'kv' },
         h('tr', null, h('th', null, '기종'), h('td', null, h('b', null, m.info.name))),
@@ -600,12 +606,13 @@ function renderIssue(app, main, m, U) {
           h('div', { class: 'to-row' }, h('div', { class: 'seg kind-seg', role: 'group', 'aria-label': '제공 구분' }, kindBtns), toInp)),
         h('div', { class: 'fld' }, h('span', null, '관리번호'), ctrlBox),
         h('label', { class: 'fld' }, h('span', null, '제공일'), dateInp),
-        hint),
+        hint)),
+      h('div', { class: 'po-b' },
       v.ng ? h('div', { class: 'warnbox' },
         h('p', null, `관리자 검증 NG ${v.ng}건이 남아 있는 데이터입니다.`),
         h('label', { class: 'chk' }, h('input', { type: 'checkbox', onchange: (e) => { ack = e.target.checked; syncBtns(); } }), '확인했으며 PDF를 만듭니다')) : null,
       h('div', { class: 'gen-btns' }, pageBtn, allBtn),
-      status, result),
+      status, result)),
     preview));
   return { syncView: syncBtns };
 }
