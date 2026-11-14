@@ -301,7 +301,6 @@ table.opt-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .opt-table tr.on .b-cell { background: #E3ECF7; font-weight: 700; color: var(--navy); }
 .opt-table tr.on .radio { border-color: var(--navy); background: radial-gradient(circle, var(--navy) 0 4px, #fff 5px); }
 .action-bar { position: sticky; bottom: 0; display: flex; align-items: center; gap: 14px; justify-content: space-between; background: #fff; border: 1.5px solid var(--navy); padding: 12px 16px; margin-top: 14px; }
-.sel-k { font-size: 11.5px; color: var(--muted); font-weight: 800; letter-spacing: .14em; }
 .action-bar .btn.primary { height: 42px; padding: 0 22px; }
 .action-bar a.btn { text-decoration: none; }
 
@@ -392,7 +391,9 @@ table.chart { border-collapse: collapse; font-size: 13px; font-variant-numeric: 
 .f-val { flex: 1; }
 .f-empty { color: var(--muted); font-size: 13px; padding: 10px 8px; }
 .f-empty.pad { padding: 18px 20px; }
-.results-h { display: flex; align-items: baseline; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--line2); }
+.results-h { display: flex; align-items: center; gap: 8px; padding: 8px 10px 8px 16px; border-bottom: 1px solid var(--line2); min-height: 50px; }
+.results-h .view-go { margin-left: auto; height: 34px; min-width: 96px; padding: 0 22px; font-size: 14px; letter-spacing: .12em; }
+.results-h .view-go:disabled { background: #9AA8B8; border-color: #9AA8B8; opacity: 1; cursor: not-allowed; }
 .results-h b { color: var(--navy); }
 table.res-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .res-table th { text-align: left; font-size: 11.5px; color: #fff; font-weight: 700; letter-spacing: .06em; background: var(--navy); padding: 8px 16px; border-bottom: 1px solid var(--navy); }
@@ -442,10 +443,9 @@ table.res-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 
 /* 제품 선택: left column = search + filter bar, the matching list underneath (scrolls);
    right column = selection summary + 조회 button, as tall as the left column. */
-.finder-grid { display: grid; grid-template-columns: minmax(0, 1fr) 260px; grid-template-rows: auto auto; gap: 14px; }
+.finder-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
 .finder-grid > .card { margin: 0; }
-.finder-grid .finder { grid-column: 1; grid-row: 1; }
-.res-col { grid-column: 1; grid-row: 2; min-width: 0; }
+.res-col { min-width: 0; }
 .res-col > .results { margin: 0; }
 .res-col .res-table th, .res-col .res-table td { padding: 0 12px; }
 /* fixed window = header + exactly 5 rows: more rows scroll, fewer leave the box the same size */
@@ -454,27 +454,10 @@ table.res-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .res-col { --res-th: 36px; --res-tr: 40px; }
 .res-col .res-scroll { height: calc(var(--res-th) + 5 * var(--res-tr)); max-height: none; }
 .res-col .res-scroll.empty { display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 13px; background: var(--hatch); }
-.finder-grid .sel-card { grid-column: 2; grid-row: 1 / span 2; }
-.sel-card { display: flex; flex-direction: column; gap: 10px; border-top: 4px solid var(--navy); }
-.sel-body { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
-.sel-name { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.sel-name b { font-size: 22px; font-weight: 900; letter-spacing: -.02em; color: var(--navy); }
-.sel-kv { margin: 0; }
-.sel-kv th { padding-right: 14px; }
-.sel-kv td { font-weight: 700; color: var(--ink); }
-.sel-empty { margin: 0; color: var(--muted); font-size: 13px; }
-.sel-card .btn.block { margin-top: auto; }
 @media (max-width: 1000px) {
   .fchip-btn { gap: 6px; padding: 7px 8px; } .fchip.set .fchip-btn { padding-right: 46px; }
   .f-clear { right: 20px; width: 20px; height: 20px; } .fchip.cat { flex: 0 0 118px; }
   .f-no { width: 20px; height: 20px; font-size: 11px; } .f-text b { font-size: 14px; } .filter-bar { gap: 4px; }
-}
-@media (max-width: 1100px) {
-  /* one column: filters, then the summary, then the list */
-  .finder-grid { grid-template-columns: minmax(0, 1fr); }
-  .finder-grid .finder, .finder-grid .sel-card, .res-col { grid-column: 1; grid-row: auto; }
-  .finder-grid .sel-card { order: 2; }   /* summary + button right under the filters */
-  .res-col { order: 3; }
 }
 @media (max-width: 640px) {
   .filter-bar { flex-wrap: wrap; } .fchip { flex: 1 1 calc(50% - 6px); } .fchip.cat { flex: 1 1 100%; } .f-arrow, .f-sep { display: none; }

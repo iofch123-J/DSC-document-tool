@@ -17,7 +17,7 @@ const norm = (s) => String(s || '').trim().toUpperCase();
 let lastUrl = null;
 
 function saveSel(U) {
-  try { sessionStorage.setItem(KEY, JSON.stringify({ category: U.category || null, product: U.product, subWinch: U.subWinch, subBoom: U.subBoom, query: U.query || '' })); } catch { /* ignore */ }
+  try { sessionStorage.setItem(KEY, JSON.stringify({ category: U.category || null, product: U.product, subWinch: U.subWinch, subBoom: U.subBoom, query: U.query || '', viewed: U.viewed || null })); } catch { /* ignore */ }
 }
 function loadSel(U) {
   if (U.product) return;
@@ -38,17 +38,22 @@ export async function renderUser(app, main) {
 
   const chosen = () => !!(U.product && U.subWinch && U.subBoom);
   const model = () => (U.product ? byName.get(norm(U.product)) : null);
+  // 조회 shows a configuration only after the '조회' button: U.viewed is the configuration it was pressed for
+  const selKey = () => (chosen() ? [U.product, U.subWinch, U.subBoom].join('|') : null);
 
   const selSec = h('section', { class: 'u-sec', id: 'sec-select' });
   const viewSec = h('section', { class: 'u-sec', id: 'sec-view' });
   const issueSec = h('section', { class: 'u-sec', id: 'sec-issue' });
   main.append(selSec, viewSec, issueSec);
 
-  // 조회 · PDF 생성 are rebuilt only when the confirmed configuration changes
+  // 조회 · PDF 생성 are rebuilt only when the viewed configuration changes; choosing another
+  // configuration in the list clears them until '조회' is pressed again
   let shown = null;
   function paintLower() {
-    const m = chosen() ? model() : null;
-    const key = m ? `${m.id}|${U.product}|${U.subWinch}|${U.subBoom}` : (chosen() ? 'unregistered' : 'none');
+    if (U.viewed && U.viewed !== selKey()) { U.viewed = null; saveSel(U); }
+    const on = !!U.viewed;
+    const m = on ? model() : null;
+    const key = m ? `${m.id}|${U.viewed}` : (on ? 'unregistered' : 'none');
     if (key === shown) return;
     shown = key;
     clear(viewSec);
@@ -56,12 +61,12 @@ export async function renderUser(app, main) {
     viewSec.append(secHead('RATED LOAD CHART', '조회', '작업영역 · 아우트리거 · 윈치 버튼을 누르면 해당 조건의 정격하중표가 나타납니다.'));
     issueSec.append(secHead('DOCUMENT ISSUE', 'PDF 생성', '외부 제공 · 내부용 PDF를 만듭니다. 지금 조회 중인 페이지만, 또는 선택한 제품 전체를 만들 수 있습니다.'));
     if (!m) {
-      viewSec.append(h('div', { class: 'card sec-empty' }, chosen()
+      viewSec.append(h('div', { class: 'card sec-empty' }, on
         ? '선택한 제품은 정격하중 데이터가 등록되지 않았습니다. 관리자 화면에서 등록하세요.'
-        : '위에서 제품명 · Sub Winch · Sub Boom을 모두 선택하면 여기에 정격하중표가 나타납니다.'));
-      issueSec.append(h('div', { class: 'card sec-empty' }, chosen()
+        : "위 목록에서 구성을 선택하고 '조회'를 누르면 여기에 정격하중표가 나타납니다."));
+      issueSec.append(h('div', { class: 'card sec-empty' }, on
         ? '정격하중 데이터가 등록된 제품만 PDF를 만들 수 있습니다.'
-        : '제품을 선택하면 PDF를 만들 수 있습니다.'));
+        : '제품을 조회하면 PDF를 만들 수 있습니다.'));
       return;
     }
     const { model: vm, notes } = applyVariant(m, U);
@@ -73,7 +78,13 @@ export async function renderUser(app, main) {
   }
   renderSelect(app, selSec, catalog, byName, U, {
     onChange: paintLower,
-    toView: () => viewSec.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+    onView: () => {
+      if (!chosen()) return;
+      U.viewed = selKey();
+      saveSel(U);
+      paintLower();
+      viewSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    },
   });
   paintLower();
 }
@@ -93,7 +104,7 @@ const svgIcon = (paths) => {
 
 const ICON_FILTER = '<path d="M3 5h18l-7 8v6l-4 2v-8z"/>';
 
-function renderSelect(app, main, catalog, byName, U, { onChange, toView }) {
+function renderSelect(app, main, catalog, byName, U, { onChange, onView }) {
   const products = catalog.products || [];
   const allRows = catalog.rows || [];
   const FILTERS = ['product', 'subWinch', 'subBoom'];
@@ -102,7 +113,7 @@ function renderSelect(app, main, catalog, byName, U, { onChange, toView }) {
   const categories = [...new Set(products.map((p) => p.category).filter(Boolean))];
   let openKey = null;
 
-  main.append(secHead('PRODUCT SELECTION', '제품 선택', `제품명을 검색하거나 필터를 차례로 눌러 ${categories.length ? '(분류) → ' : ''}제품명 → Sub Winch → Sub Boom을 선택하세요.`));
+  main.append(secHead('PRODUCT SELECTION', '제품 선택', `제품명을 검색하거나 필터를 차례로 눌러 ${categories.length ? '(분류) → ' : ''}제품명 → Sub Winch → Sub Boom을 선택한 뒤 '조회'를 누르세요.`));
 
   if (!products.length) {
     main.append(h('div', { class: 'card empty' },
@@ -258,9 +269,10 @@ function renderSelect(app, main, catalog, byName, U, { onChange, toView }) {
     clear(results);
     const rows = allRows.filter((r) => matchQuery(r.product) && inCategory(r.category)
       && (!U.product || r.product === U.product) && (!U.subWinch || r.subWinch === U.subWinch) && (!U.subBoom || r.subBoom === U.subBoom));
+    const done = !!(U.product && U.subWinch && U.subBoom);
     results.append(h('div', { class: 'results-h' },
       h('b', null, U.subBoom ? '선택한 구성' : '조건에 맞는 구성'), h('span', { class: 'muted' }, `${rows.length}개`),
-      !U.subBoom && rows.length ? h('span', { class: 'muted hint-inline' }, '행을 눌러도 바로 선택됩니다') : null));
+      h('button', { class: 'btn primary view-go', disabled: !done, title: done ? `${U.product} · ${variantLabel(U)} 조회` : '목록에서 구성을 선택하세요', onclick: onView }, '조회')));
     if (!rows.length) { results.append(h('div', { class: 'res-scroll empty' }, '조건에 맞는 구성이 없습니다.')); return; }   // same box size as a list
     let lastP = null;
     let lastCat = '';
@@ -302,32 +314,9 @@ function renderSelect(app, main, catalog, byName, U, { onChange, toView }) {
     if (top && !top.classList.contains('grp') && scroller.scrollTop > 0) top.classList.add('pin');
   }
 
-  // ---- selection summary (right column): what is chosen + the button down to 조회
-  const summary = h('div', { class: 'sel-body' });
-  const next = h('button', { class: 'btn primary block', onclick: () => toView() }, '조회 결과 보기 ↓');
-  function paintSummary() {
-    clear(summary);
-    const done = U.product && U.subWinch && U.subBoom;
-    const m = U.product ? regOf(U.product) : null;
-    summary.append(h('div', { class: 'sel-k' }, done ? '선택 확정' : '선택 중'));
-    if (!U.product) summary.append(h('p', { class: 'sel-empty' }, '제품명부터 선택하세요.'));
-    else {
-      const cat = product()?.category;
-      summary.append(
-        h('div', { class: 'sel-name' }, h('b', null, U.product), cat ? h('span', { class: 'chip' }, cat) : null),
-        h('table', { class: 'kv sel-kv' },
-          h('tr', null, h('th', null, 'Sub Winch'), h('td', null, U.subWinch || '—')),
-          h('tr', null, h('th', null, 'Sub Boom'), h('td', null, U.subBoom || '—'))),
-        m ? h('span', { class: 'chip ok' }, `정격하중 데이터 Rev.${m.info.rev || '00'}`) : h('span', { class: 'chip warn' }, '정격하중 데이터 미등록'));
-    }
-    next.disabled = !(done && m);
-    next.title = done && !m ? '이 제품은 정격하중 데이터가 등록되지 않았습니다. 관리자 화면에서 등록하세요.' : '';
-  }
-
   function paint() {
     paintBar();
     paintResults();
-    paintSummary();
     if (openKey) focusOption();
     onChange();
   }
@@ -335,12 +324,11 @@ function renderSelect(app, main, catalog, byName, U, { onChange, toView }) {
   const src = catalog.source === 'db'
     ? `제품 DB: ${catalog.db.fileName || ''} (${catalog.db.rows.length}개 구성) · ${String(catalog.db.importedAt || '').slice(0, 10).replace(/-/g, '.')} 가져옴`
     : '※ 제품 DB가 없어 등록된 정격하중 데이터로 목록을 만들었습니다 (관리자 → 제품 DB 가져오기).';
-  // left: search + filters with the matching list underneath · right: selection summary + 조회 (full height)
+  // search + filters, with the matching list (and its 조회 button) underneath
   main.append(
     h('div', { class: 'finder-grid' },
       h('div', { class: 'card finder' }, searchBox, bar),
-      h('div', { class: 'res-col' }, results),
-      h('div', { class: 'card sel-card' }, summary, next)),
+      h('div', { class: 'res-col' }, results)),
     h('p', { class: 'hint' }, src),
   );
   paint();
