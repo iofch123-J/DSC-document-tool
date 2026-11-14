@@ -512,7 +512,8 @@ table.res-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .vr-table .ct { min-width: 0; }
 
 /* ---------------------------------------------------------------- 조회: two pictures like the printed chart */
-.vp-wrap { display: grid; grid-template-columns: 1fr 1fr 150px; gap: 18px; align-items: start; }
+/* three equal columns: 작업영역 · 아우트리거 · 윈치, each a picture with its buttons stacked on the right */
+.vp-wrap { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; align-items: stretch; }
 .vp-col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .vp-col + .vp-col { padding-left: 18px; border-left: 1px solid var(--line2); }
 .vp-pic { display: flex; flex-direction: column; gap: 6px; }
@@ -527,23 +528,19 @@ table.res-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .vb-stack .vbtn { flex: 1; }
 .vb-stack .vbtn + .vbtn { margin-top: -1.5px; }
 @media (max-width: 560px) { .vp-body { grid-template-columns: minmax(0, 1fr) 76px; } }
-/* winch buttons fill the column so all three button stacks line up */
-.vp-winch .vb-col { flex: 1; }
-.vp-winch .vb-col .vbtn { flex: 1; }
+/* winch: its picture spans picture + caption height of the other two, so all three button stacks line up */
+.vp-winch .vp-body { flex: 1; }
+.vp-pic.tall .vp-frame { flex: 1; height: auto; min-height: 170px; }
+.vp-frame.blank { color: var(--muted); font-size: 12px; font-weight: 700; background: var(--hatch); }
 .vp-col .vbtn { min-width: 0; justify-content: center; padding: 9px 8px; }
 .vp-col .vbtn .vb-t { align-items: center; }
-.vb-col { display: flex; flex-direction: column; gap: 0; }
-.vb-col .vbtn + .vbtn { margin-top: -1.5px; }
-.vb-col .vbtn { justify-content: center; padding: 12px 10px; }
-.vb-col .vbtn .vb-t { align-items: center; }
-.vp-winch { align-self: stretch; }
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
   .vp-wrap { grid-template-columns: 1fr 1fr; }
   .vp-winch { grid-column: 1 / -1; padding-left: 0 !important; border-left: 0 !important; }
-  .vp-winch .vb-col { flex-direction: row; }
-  .vp-winch .vb-col .vbtn + .vbtn { margin-top: 0; margin-left: -1.5px; }
-  .vp-winch .vb-col .vbtn { flex: 1; }
+}
+@media (max-width: 900px) {
   .vp-frame { height: 140px; }
+  .vp-pic.tall .vp-frame { min-height: 140px; }
 }
 @media (max-width: 560px) {
   .vp-wrap { grid-template-columns: 1fr; }

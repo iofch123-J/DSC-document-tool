@@ -426,16 +426,20 @@ function renderView(app, main, m, notes, U) {
             title: perOr ? o.name : `${a.name}은 아우트리거 신장 상태와 관계없이 표가 하나입니다`,
             onclick: () => { sel.or = o.id; },
           }))))),
+      // winch: same layout as the other two — picture (to come) on the left, 메인 / 보조 on the right
       h('div', { class: 'vp-col vp-winch' },
         h('div', { class: 'vb-label' }, '윈치'),
-        h('div', { class: 'vb-col' },
-          vbtn({ on: wk === 'main', label: '메인', sub: S.winches.main.labelEn || 'MAIN WINCH', onclick: () => { sel.winch = 'main'; } }),
-          vbtn({
-            on: wk !== 'main', disabled: !auxKey, label: '보조',
-            sub: auxKey ? (S.winches[auxKey].capacity || 'AUX. WINCH') : 'Sub Winch 없음',
-            title: auxKey ? '' : '선택한 제품 구성에 보조 윈치가 없습니다',
-            onclick: () => { sel.winch = 'aux'; },
-          }))));
+        h('div', { class: 'vp-body' },
+          h('div', { class: 'vp-pic tall' },
+            h('div', { class: 'vp-frame blank', role: 'img', 'aria-label': '윈치 그림 (준비 중)' }, h('span', null, '윈치 그림 준비 중'))),
+          h('div', { class: 'vb-stack' },
+            vbtn({ on: wk === 'main', label: '메인', sub: S.winches.main.labelEn || 'MAIN WINCH', onclick: () => { sel.winch = 'main'; } }),
+            vbtn({
+              on: wk !== 'main', disabled: !auxKey, label: '보조',
+              sub: auxKey ? (S.winches[auxKey].labelEn || 'AUX. WINCH') : 'Sub Winch 없음',
+              title: auxKey ? (S.winches[auxKey].capacity ? `보조 윈치 ${S.winches[auxKey].capacity}` : '') : '선택한 제품 구성에 보조 윈치가 없습니다',
+              onclick: () => { sel.winch = 'aux'; },
+            })))));
 
     const fl = cfg.falls;
     const hasFalls = fl?.threshold !== null && fl?.threshold !== undefined && fl?.threshold !== '';
