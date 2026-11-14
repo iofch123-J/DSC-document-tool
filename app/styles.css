@@ -317,6 +317,9 @@ table.cond-nav { border-collapse: collapse; width: 100%; font-size: 13px; }
 .ct-title .en { font-size: 10px; letter-spacing: .22em; opacity: .7; font-weight: 700; }
 .ct-title .u { margin-left: auto; font-size: 12px; opacity: .9; }
 .ct-scroll { overflow-x: auto; }
+/* the 작업반경 column stays in view while the table scrolls sideways (borders drawn as shadows: collapsed borders scroll away) */
+.ct-scroll .chart th.rad { position: sticky; left: 0; z-index: 1; box-shadow: inset -1px 0 0 #8D9DAF; }
+.ct-scroll .chart thead th.rad { z-index: 2; }
 table.chart { border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
 .chart th { background: var(--steel); color: var(--navy); font-weight: 700; border: 1px solid var(--line2); padding: 4px 8px; min-width: 62px; }
 .chart th.grp { background: #D4DDE7; font-size: 12px; }
