@@ -54,7 +54,7 @@ export async function renderUser(app, main) {
     clear(viewSec);
     clear(issueSec);
     viewSec.append(secHead('RATED LOAD CHART', '조회', '작업영역 · 아우트리거 · 윈치 버튼을 누르면 해당 조건의 정격하중표가 나타납니다.'));
-    issueSec.append(secHead('DOCUMENT ISSUE', 'PDF 생성', '제공처와 관리번호를 넣어 고객·CS 배포용 PDF를 만듭니다. 모든 조건이 들어갑니다.'));
+    issueSec.append(secHead('DOCUMENT ISSUE', 'PDF 생성', '외부 제공 · 내부용 PDF를 만듭니다. 지금 조회 중인 페이지만, 또는 선택한 제품 전체를 만들 수 있습니다.'));
     if (!m) {
       viewSec.append(h('div', { class: 'card sec-empty' }, chosen()
         ? '선택한 제품은 정격하중 데이터가 등록되지 않았습니다. 관리자 화면에서 등록하세요.'
@@ -65,8 +65,9 @@ export async function renderUser(app, main) {
       return;
     }
     const { model: vm, notes } = applyVariant(m, U);
-    renderView(app, viewSec, vm, notes, U);
-    renderIssue(app, issueSec, vm, U);
+    let issue = null;
+    renderView(app, viewSec, vm, notes, U, () => issue?.syncView());   // the page button follows 조회
+    issue = renderIssue(app, issueSec, vm, U);
     // 보안관리 이력: one entry per configuration opened in 조회
     logEvent(app.store, app.session, 'view', { product: U.product, subWinch: U.subWinch, subBoom: U.subBoom, rev: m.info.rev || '00' });
   }
@@ -377,7 +378,7 @@ function chartTable(m, cond, winch) {
 // 조회: three button groups (작업영역 · 아우트리거 · 윈치) pick ONE table.
 const OR_CODES = ['MAX', 'MID', 'MIN'];
 
-function renderView(app, main, m, notes, U) {
+function renderView(app, main, m, notes, U, onPaint) {
   const conds = conditions(m);
   const v = validate(m);
   const S = m.settings;
@@ -462,7 +463,7 @@ function renderView(app, main, m, notes, U) {
 
     const fl = cfg.falls;
     const hasFalls = fl?.threshold !== null && fl?.threshold !== undefined && fl?.threshold !== '';
-    const title = [a.name, perOr ? `${orCode(ors[orIdx], orIdx)}. ${ors[orIdx].name}` : '아우트리거 전 구간 공통', winchTitle(cfg)].join(' · ');
+    const title = [a.name, perOr ? `${orCode(ors[orIdx], orIdx)}.` : '아우트리거 전 구간 공통', winchTitle(cfg)].join(' · ');
     const result = h('div', { class: 'card view-result' },
       h('div', { class: 'vr-head' },
         h('div', null,
@@ -475,6 +476,8 @@ function renderView(app, main, m, notes, U) {
       cond ? h('div', { class: 'vr-table' }, chartTable(m, cond, wk)) : h('p', { class: 'muted' }, '해당 조건의 표가 없습니다.'));
 
     panel.append(groups, result);
+    sel.page = cond ? { condKey: cond.key, winch: wk, label: title } : null;   // what '조회 페이지만 생성' prints
+    onPaint?.();
   }
 
   main.append(...[
@@ -495,34 +498,92 @@ function renderView(app, main, m, notes, U) {
 }
 
 // ------------------------------------------------------------------------ PDF 생성
+// 외부 (default): 제공처 goes on every page. 내부: no 제공처 — the person viewing (사번 이름) instead.
+// 관리번호 is issued automatically per generated file: DSC-YYYY-MM-NNN (the NNN-th file of that month).
+// Two buttons: only the table shown in 조회 right now (one page, no cover), or the whole product
+// as configured (cover + every condition of the chosen Sub Winch / Sub Boom).
 function renderIssue(app, main, m, U) {
   const o = app.user.pdf;
+  if (o.kind !== 'internal') o.kind = 'external';
   const v = validate(m);
   const pages = planPages(m);
-  const inp = (key, ph, type = 'text') => h('input', { type, class: 'inp', value: o[key] || '', placeholder: ph, oninput: (e) => { o[key] = e.target.value; } });
+  const viewer = app.session ? [app.session.empNo, app.session.name].filter(Boolean).join(' ') : '';
+  const internal = () => o.kind === 'internal';
+
   const status = h('div', { class: 'pdf-status' });
   const result = h('div', { class: 'pdf-result' });
   const preview = h('div', { class: 'pdf-preview' }, h('div', { class: 'ph' },
-    h('p', null, "제공처와 관리번호를 입력하고 'PDF 만들기'를 누르세요."),
-    h('p', { class: 'muted' }, `${m.info.name} · ${variantLabel(U)} · 표지 1 + 조건별 ${pages.length - 1}페이지 (모든 조건 포함)`)));
-  let ack = !v.ng;
-  const btn = h('button', { class: 'btn primary block', disabled: !ack, onclick: generate }, 'PDF 만들기');
+    h('p', null, "'조회 페이지만 생성' 또는 '제품 전체 생성'을 누르세요."),
+    h('p', { class: 'muted' }, `${m.info.name} · ${variantLabel(U)}`)));
 
-  async function generate() {
-    btn.disabled = true;
+  const toInp = h('input', { type: 'text', class: 'inp', value: o.to || '', oninput: (e) => { o.to = e.target.value; } });
+  const ctrlBox = h('div', { class: 'inp ro ctrl-box', 'aria-live': 'polite' });
+  const dateInp = h('input', { type: 'date', class: 'inp', value: o.date || '', oninput: (e) => { o.date = e.target.value; } });
+  const hint = h('p', { class: 'hint' });
+  const showCtrl = (ctrl) => {
+    ctrlBox.textContent = ctrl || '생성할 때 자동 부여';
+    ctrlBox.classList.toggle('set', !!ctrl);
+  };
+  showCtrl(null);
+
+  const kindBtns = [['external', '외부'], ['internal', '내부']].map(([k, label]) => h('button', {
+    type: 'button', 'aria-pressed': 'false', onclick: () => { o.kind = k; syncKind(); },
+  }, label));
+  function syncKind() {
+    kindBtns.forEach((b, i) => {
+      const on = (i === 1) === internal();
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    toInp.disabled = internal();
+    toInp.value = internal() ? '' : (o.to || '');
+    toInp.placeholder = internal() ? '내부용 — 제공처 없음' : '예: ○○건설 ○○현장';
+    hint.textContent = internal()
+      ? `내부용: 조회자${viewer ? `(${viewer})` : ''}와 관리번호가 모든 페이지의 워터마크와 바닥글에 들어갑니다.`
+      : '외부 제공: 제공처와 관리번호가 모든 페이지의 워터마크와 바닥글에 들어갑니다.';
+  }
+
+  let ack = !v.ng;
+  let busy = false;
+  const pageSub = h('small');
+  const pageBtn = h('button', { class: 'btn gen-btn', onclick: () => generate('page') },
+    h('b', null, '조회 페이지만 생성'), pageSub);
+  const allBtn = h('button', { class: 'btn primary gen-btn', onclick: () => generate('all') },
+    h('b', null, '제품 전체 생성'), h('small', null, `표지 1 + 조건별 ${pages.length - 1}페이지`));
+  const syncBtns = () => {
+    const pg = U.view?.page;
+    pageBtn.disabled = busy || !ack || !pg?.condKey;
+    allBtn.disabled = busy || !ack;
+    pageSub.textContent = pg?.condKey ? `${pg.label} · 1페이지` : '조회 중인 표가 없습니다';
+  };
+
+  async function generate(scope) {
+    const pg = U.view?.page;
+    if (scope === 'page' && !pg?.condKey) return;
+    busy = true;
+    syncBtns();
     clear(result);
     try {
       const t0 = performance.now();
-      const blob = await makePdf(m, { mode: 'customer', dist: { to: o.to.trim(), ctrl: o.ctrl.trim(), date: o.date } }, (t) => { status.textContent = t; });
+      status.textContent = '관리번호 받는 중…';
+      const ctrl = await app.store.nextCtrl();
+      showCtrl(ctrl);
+      const to = internal() ? '' : String(o.to || '').trim();
+      const dist = internal() ? { internal: true, viewer, ctrl, date: o.date } : { to, ctrl, date: o.date };
+      const only = scope === 'page' ? { condKey: pg.condKey, winch: pg.winch } : null;
+      const blob = await makePdf(m, { mode: 'customer', dist, only }, (t) => { status.textContent = t; });
       if (lastUrl) URL.revokeObjectURL(lastUrl);
       lastUrl = URL.createObjectURL(blob);
-      const fname = `${safeName(m.info.name)}_${safeName(variantFileTag(U))}_정격하중표_Rev${safeName(m.info.rev || '00')}${o.ctrl ? `_${safeName(o.ctrl)}` : ''}.pdf`;
+      const n = scope === 'page' ? 1 : pages.length;
+      const part = scope === 'page' ? pg.label.replace(/\s*·\s*/g, '_').replace(/\.(?=_|$)/g, '').replace(/\s+/g, '') : '정격하중표';
+      const fname = `${[m.info.name, variantFileTag(U), part, `Rev${m.info.rev || '00'}`, internal() ? '내부용' : '', ctrl].filter(Boolean).map(safeName).join('_')}.pdf`;
       clear(preview);
       preview.append(h('iframe', { src: lastUrl, title: 'PDF 미리보기' }));
-      status.textContent = `완료 — ${pages.length}페이지 · ${(blob.size / 1024).toFixed(0)} KB · ${((performance.now() - t0) / 1000).toFixed(1)}초`;
+      status.textContent = `완료 — ${ctrl} · ${n}페이지 · ${(blob.size / 1024).toFixed(0)} KB · ${((performance.now() - t0) / 1000).toFixed(1)}초`;
       logEvent(app.store, app.session, 'pdf', {
-        product: m.info.name, subWinch: U.subWinch, subBoom: U.subBoom, rev: m.info.rev || '00', mode: 'customer',
-        to: o.to.trim(), ctrl: o.ctrl.trim(), date: o.date, file: fname, pages: pages.length,
+        product: m.info.name, subWinch: U.subWinch, subBoom: U.subBoom, rev: m.info.rev || '00',
+        mode: internal() ? 'internal' : 'customer', scope, page: scope === 'page' ? pg.label : undefined,
+        to, ctrl, date: o.date, file: fname, pages: n,
       });
       result.append(
         h('button', { class: 'btn primary block', onclick: () => download(blob, fname) }, '내려받기'),
@@ -532,10 +593,13 @@ function renderIssue(app, main, m, U) {
       console.error(e);
       status.textContent = `PDF 생성 실패: ${e.message}`;
     } finally {
-      btn.disabled = !ack;
+      busy = false;
+      syncBtns();
     }
   }
 
+  syncKind();
+  syncBtns();
   main.append(h('div', { class: 'pdf-layout' },
     h('div', { class: 'card pdf-opts' },
       h('h2', null, '배포 정보'),
@@ -544,13 +608,16 @@ function renderIssue(app, main, m, U) {
         h('tr', null, h('th', null, '사양'), h('td', null, variantLabel(U))),
         h('tr', null, h('th', null, '개정'), h('td', null, `Rev.${m.info.rev || '00'} · ${String(m.info.issueDate || '').replace(/-/g, '.')}`))),
       h('div', { class: 'dist' },
-        h('label', { class: 'fld' }, h('span', null, '제공처'), inp('to', '예: ○○건설 ○○현장')),
-        h('label', { class: 'fld' }, h('span', null, '관리번호'), inp('ctrl', '예: CC-2026-001')),
-        h('label', { class: 'fld' }, h('span', null, '제공일'), inp('date', '', 'date')),
-        h('p', { class: 'hint' }, '제공처·관리번호는 모든 페이지의 워터마크와 바닥글에 들어갑니다.')),
+        h('div', { class: 'fld' }, h('span', null, '제공처'),
+          h('div', { class: 'to-row' }, h('div', { class: 'seg kind-seg', role: 'group', 'aria-label': '제공 구분' }, kindBtns), toInp)),
+        h('div', { class: 'fld' }, h('span', null, '관리번호'), ctrlBox),
+        h('label', { class: 'fld' }, h('span', null, '제공일'), dateInp),
+        hint),
       v.ng ? h('div', { class: 'warnbox' },
         h('p', null, `관리자 검증 NG ${v.ng}건이 남아 있는 데이터입니다.`),
-        h('label', { class: 'chk' }, h('input', { type: 'checkbox', onchange: (e) => { ack = e.target.checked; btn.disabled = !ack; } }), '확인했으며 PDF를 만듭니다')) : null,
-      btn, status, result),
+        h('label', { class: 'chk' }, h('input', { type: 'checkbox', onchange: (e) => { ack = e.target.checked; syncBtns(); } }), '확인했으며 PDF를 만듭니다')) : null,
+      h('div', { class: 'gen-btns' }, pageBtn, allBtn),
+      status, result),
     preview));
+  return { syncView: syncBtns };
 }

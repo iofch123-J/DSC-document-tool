@@ -130,7 +130,7 @@ export function describeLog(e) {
   const cfg = [e.product, e.subWinch && `Sub Winch ${e.subWinch}`, e.subBoom && `Sub Boom ${e.subBoom}`].filter(Boolean).join(' · ');
   if (e.type === 'view') return cfg;
   if (e.type === 'pdf') {
-    const kind = e.note || (e.mode === 'internal' ? '내부용' : '고객 제공용');
+    const kind = e.note || [e.mode === 'internal' ? '내부용' : '외부 제공용', e.scope === 'page' ? '조회 페이지만' : e.scope === 'all' ? '제품 전체' : '', e.page].filter(Boolean).join(' · ');
     return [cfg || e.product, kind, e.to && `제공처 ${e.to}`, e.ctrl && `관리번호 ${e.ctrl}`, e.file].filter(Boolean).join(' · ');
   }
   if (e.type === 'enter') return e.admin ? '관리자' : (e.note || '');

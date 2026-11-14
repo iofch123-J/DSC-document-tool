@@ -109,11 +109,14 @@ export function createRemote(url, { onAuthError } = {}) {
     // ---- history
     async addLog(entry) {
       // the server takes the person from the token; only what happened is sent
-      const { type, product, subWinch, subBoom, to, ctrl, file, mode, pages, via } = entry;
-      await call('log', { entry: { type, product, subWinch, subBoom, to, ctrl, file, mode, pages, via } });
+      const { type, product, subWinch, subBoom, to, ctrl, file, mode, scope, pages, via } = entry;
+      await call('log', { entry: { type, product, subWinch, subBoom, to, ctrl, file, mode, scope, pages, via } });
     },
     async listLogs() { return (await call('logs.list', { limit: 2000 })).logs; },
     async clearLogs() { throw new Error('이력은 구글 시트 \'이력\' 탭에서 관리합니다.'); },
+
+    // ---- document numbers: issued by the server so they never repeat across people
+    async nextCtrl() { return (await call('ctrl.next')).ctrl; },
   };
 
   // ---- entry screen (사번 → 이름 초성), checked on the server

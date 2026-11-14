@@ -51,4 +51,21 @@ export const localStore = {
   addLog: (entry) => tx('logs', 'readwrite', (s) => s.add(plain(entry))),
   listLogs: () => tx('logs', 'readonly', (s) => s.getAll()),
   clearLogs: () => tx('logs', 'readwrite', (s) => s.clear()),
+  /** Next document number for this month: DSC-2026-11-001, -002, … (counter kept in meta 'ctrlSeq'). */
+  async nextCtrl() {
+    const d = new Date();
+    const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const box = await tx('meta', 'readwrite', (s) => {
+      const out = { value: null };
+      const req = s.get('ctrlSeq');
+      req.onsuccess = () => {
+        const seq = req.result || {};
+        seq[ym] = (seq[ym] || 0) + 1;
+        s.put(seq, 'ctrlSeq');
+        out.value = `DSC-${ym}-${String(seq[ym]).padStart(3, '0')}`;
+      };
+      return out;
+    });
+    return box.value;
+  },
 };

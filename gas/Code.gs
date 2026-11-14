@@ -17,7 +17,7 @@
  */
 
 const APP = {
-  version: '2',
+  version: '3',
   folderName: 'DY Rated Load 데이터',
   modelsFile: 'models.json',
   brandFile: 'brand.json',
@@ -61,6 +61,7 @@ function route_(req) {
     case 'meta.get': return { value: metaGet_(req.key) };
     case 'meta.put': admin_(s); metaPut_(req.key, req.value); return {};
     case 'log': logClient_(s, req.entry || {}); return {};
+    case 'ctrl.next': return { ctrl: ctrlNext_() };
     case 'logs.list': admin_(s); return { logs: logList_(Number(req.limit) || 2000), sheetUrl: sheetUrl_() };
     case 'staff.list': admin_(s); return { staff: { suffix: suffix_(), people: staff_() }, sheetUrl: sheetUrl_() };
     default: throw err_('알 수 없는 요청입니다.', 'bad');
@@ -317,7 +318,7 @@ function logRow_(e) {
 function logClient_(s, e) {
   const type = String(e.type || '');
   if (['view', 'pdf', 'exit'].indexOf(type) < 0) throw err_('기록할 수 없는 구분입니다.', 'bad');
-  const note = type === 'pdf' ? [e.mode === 'internal' ? '내부용' : '고객 제공용', e.pages ? e.pages + '페이지' : '', e.via || ''].filter(String).join(' · ') : '';
+  const note = type === 'pdf' ? [e.mode === 'internal' ? '내부용' : '외부 제공용', e.scope === 'page' ? '조회 페이지만' : e.scope === 'all' ? '제품 전체' : '', e.pages ? e.pages + '페이지' : '', e.via || ''].filter(String).join(' · ') : '';
   logRow_({ type: type, empNo: s.e, name: s.n, sid: s.s, product: e.product, subWinch: e.subWinch, subBoom: e.subBoom, to: e.to, ctrl: e.ctrl, file: e.file, note: note });
 }
 
@@ -333,6 +334,18 @@ function logList_(limit) {
       product: r[4], subWinch: r[5], subBoom: r[6], to: r[7], ctrl: r[8], file: r[9], note: r[10], sid: r[12],
     };
   }).reverse();
+}
+
+// ------------------------------------------------------------------------------ document numbers
+/** DSC-2026-11-001: the n-th PDF issued this month (Korea time), shared by everyone. */
+function ctrlNext_() {
+  return withLock_(function () {
+    const ym = Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM');
+    const props = PropertiesService.getScriptProperties();
+    const n = Number(props.getProperty('CTRL_' + ym) || 0) + 1;
+    props.setProperty('CTRL_' + ym, String(n));
+    return 'DSC-' + ym + '-' + (n < 1000 ? ('00' + n).slice(-3) : String(n));
+  });
 }
 
 // ------------------------------------------------------------------------------ helpers

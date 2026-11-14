@@ -67,7 +67,9 @@ function firstMarker(model) {
 }
 
 export async function buildPdf(model, opts) {
-  const { PDFLib, fontkit, fonts, mode = 'customer', dist = {} } = opts;
+  // dist: { to, ctrl, date } for an outside recipient, or { internal: true, viewer, ctrl, date } for in-house use
+  // only: { condKey, winch } → just that one page (no cover), e.g. the table on screen in 조회
+  const { PDFLib, fontkit, fonts, mode = 'customer', dist = {}, only = null } = opts;
   const { PDFDocument, rgb, degrees } = PDFLib;
   const col = (hex) => rgb(parseInt(hex.slice(1, 3), 16) / 255, parseInt(hex.slice(3, 5), 16) / 255, parseInt(hex.slice(5, 7), 16) / 255);
   const K = Object.fromEntries(Object.entries(HEX).map(([k, v]) => [k, col(v)]));
@@ -92,12 +94,21 @@ export async function buildPdf(model, opts) {
     logo = info.logo.includes('image/png') ? await doc.embedPng(bytes) : await doc.embedJpg(bytes);
   }
 
-  const plan = planPages(model);
+  let plan = planPages(model);
+  if (only) {
+    const cond = conditions(model).find((c) => c.key === only.condKey);
+    if (!cond) throw new Error('조회 중인 조건을 찾지 못했습니다.');
+    plan = [{ type: 'cond', cond, winches: [only.winch], no: 1 }];
+  }
   const N = plan.length;
   // internal copies outline the cells that fail a check
   const ngCells = mode === 'internal' ? issueIndex(validate(model)) : null;
-  const distText = [dist.to && `제공처 ${dist.to}`, dist.ctrl && `관리번호 ${dist.ctrl}`, dist.date && `제공일 ${dots(dist.date)}`].filter(Boolean).join(' · ');
-  const watermark = mode === 'internal' ? 'INTERNAL · 내부용' : dist.to ? `${dist.to} 제공용${dist.ctrl ? ` · ${dist.ctrl}` : ''}` : '';
+  const distText = (dist.internal
+    ? ['내부용', dist.viewer && `조회자 ${dist.viewer}`, dist.ctrl && `관리번호 ${dist.ctrl}`, dist.date && `제공일 ${dots(dist.date)}`]
+    : [dist.to && `제공처 ${dist.to}`, dist.ctrl && `관리번호 ${dist.ctrl}`, dist.date && `제공일 ${dots(dist.date)}`]).filter(Boolean).join(' · ');
+  const watermark = mode === 'internal' ? 'INTERNAL · 내부용'
+    : dist.internal ? ['내부용', dist.viewer, dist.ctrl].filter(Boolean).join(' · ')
+    : dist.to ? `${dist.to} 제공용${dist.ctrl ? ` · ${dist.ctrl}` : ''}` : '';
 
   for (const pg of plan) {
     const page = doc.addPage([PAGE.w, PAGE.h]);
@@ -637,7 +648,8 @@ function drawCover(P, model, plan, N, logo, dist, st) {
   P.rect(M.l, by, 3.7, 30, { fill: K.amber });
   let bx = M.l + 14;
   bx += P.text('배포 관리', bx, by + 18.5, { f: 'x', size: 7.6, color: K.navy }) + 16;
-  for (const [l, v] of [['제공처', dist.to], ['관리번호', dist.ctrl], ['제공일', dist.date ? dots(dist.date) : '']]) {
+  const recipient = dist.internal ? `내부용${dist.viewer ? ` (${dist.viewer})` : ''}` : dist.to;
+  for (const [l, v] of [['제공처', recipient], ['관리번호', dist.ctrl], ['제공일', dist.date ? dots(dist.date) : '']]) {
     bx += P.text(l, bx, by + 18.5, { size: 7.4, color: K.muted }) + 6;
     const vw = Math.max(70, P.measure(v || '', 'b', 7.4) + 12);
     P.text(v || '', bx + 4, by + 18, { f: 'b', size: 7.4, color: K.ink });

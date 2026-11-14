@@ -104,6 +104,10 @@ const ctx = vm.createContext({
   PropertiesService: { getScriptProperties: () => ({ getProperty: (k) => props.get(k) ?? null, setProperty: (k, v) => { props.set(k, v); } }) },
   Utilities: {
     getUuid: () => crypto.randomUUID(),
+    formatDate: (d, tz, fmt) => {   // enough for 'yyyy-MM'
+      const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(d).map((x) => [x.type, x.value]));
+      return fmt.replace('yyyy', p.year).replace('MM', p.month).replace('dd', p.day);
+    },
     newBlob: (data) => {
       const buf = typeof data === 'string' ? Buffer.from(data, 'utf8') : unsigned(data);
       return { getBytes: () => signed(buf), getDataAsString: () => buf.toString('utf8') };
