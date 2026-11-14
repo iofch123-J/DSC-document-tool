@@ -471,6 +471,10 @@ table.res-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .res-table td .chip:not(.ok) { background: #fff; border-color: var(--line); color: var(--muted); }
 .res-table td.no, .res-table th.no { width: 54px; color: var(--muted); text-align: right; padding-right: 10px; }
 .res-table td.cat { color: var(--navy3); font-weight: 700; font-size: 13px; width: 60px; }
+/* group label repeated on the top visible row while scrolling (muted: it continues the group above) */
+.res-table .ghost { display: none; }
+.res-table tr.pin .ghost { display: inline; color: var(--muted); font-weight: 700; }
+.res-table tr.pin td.p .ghost { font-size: 15px; }
 
 /* ---------------------------------------------------------------- 조회: toggle buttons + one table */
 .vb-groups { display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-start; }

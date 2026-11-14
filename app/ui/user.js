@@ -262,24 +262,43 @@ function renderSelect(app, main, catalog, byName, U, { onChange, toView }) {
       !U.subBoom && rows.length ? h('span', { class: 'muted hint-inline' }, '행을 눌러도 바로 선택됩니다') : null));
     if (!rows.length) { results.append(h('div', { class: 'res-scroll empty' }, '조건에 맞는 구성이 없습니다.')); return; }   // same box size as a list
     let lastP = null;
+    let lastCat = '';
     const showCat = categories.length > 0;
-    results.append(h('div', { class: 'res-scroll' }, h('table', { class: 'res-table' },
+    const scroller = h('div', { class: 'res-scroll' });
+    results.append(scroller);
+    scroller.append(h('table', { class: 'res-table' },
       h('thead', null, h('tr', null,
         h('th', { class: 'no' }, 'No.'), showCat ? h('th', null, '분류') : null, h('th', null, '제품명'),
         h('th', null, 'Sub Winch'), h('th', null, 'Sub Boom'), h('th', null, '정격하중 데이터'), h('th', null, ''))),
       h('tbody', null, rows.map((r) => {
         const first = r.product !== lastP;
         lastP = r.product;
+        if (first) lastCat = r.category;
         const isOn = U.product === r.product && U.subWinch === r.subWinch && U.subBoom === r.subBoom;
+        // follow-on rows carry the group's 분류/제품명 hidden; the top visible row shows them while scrolling
         return h('tr', { class: `${first ? 'grp' : ''} ${isOn ? 'on' : ''}`, onclick: () => setAll(r) },
           h('td', { class: 'no' }, r.no),
-          showCat ? h('td', { class: 'cat' }, first ? r.category : '') : null,
-          h('td', { class: 'p' }, first ? h('b', null, r.product) : ''),
+          showCat ? h('td', { class: 'cat' }, first ? r.category : h('span', { class: 'ghost' }, r.category || lastCat)) : null,
+          h('td', { class: 'p' }, first ? h('b', null, r.product) : h('span', { class: 'ghost' }, r.product)),
           h('td', null, r.subWinch),
           h('td', null, r.subBoom),
           h('td', null, first ? regBadge(r.product) : ''),
           h('td', { class: 'pick' }, isOn ? h('span', { class: 'chip ok' }, '선택됨') : h('span', { class: 'pick-btn' }, '선택')));
-      })))));
+      }))));
+    pinTopRow(scroller);
+    scroller.addEventListener('scroll', () => pinTopRow(scroller), { passive: true });
+  }
+
+  /** While scrolled into a product's group, its first row is hidden — show the name on the top visible row. */
+  function pinTopRow(scroller) {
+    const head = scroller.querySelector('thead');
+    const line = scroller.scrollTop + (head ? head.offsetHeight : 0);
+    let top = null;
+    for (const tr of scroller.querySelectorAll('tbody tr')) {
+      if (tr.offsetTop + tr.offsetHeight / 2 > line) { top = tr; break; }
+    }
+    scroller.querySelector('tr.pin')?.classList.remove('pin');
+    if (top && !top.classList.contains('grp') && scroller.scrollTop > 0) top.classList.add('pin');
   }
 
   // ---- selection summary (right column): what is chosen + the button down to 조회
