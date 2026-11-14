@@ -432,7 +432,7 @@ function renderView(app, main, m, notes, U, onPaint) {
         h('div', { class: 'vb-label' }, '아우트리거', !perOr ? h('span', { class: 'vb-note' }, `${a.name}은 전 구간 공통`) : null),
         h('div', { class: 'vp-body' },
           picture(toSvg(outriggerDiagram(orCur ? orCur.pct ?? 1 : 'all'), 'width="100%" preserveAspectRatio="xMidYMid meet"'),
-            orCur ? `${orCode(orCur, orIdx)}.` : '전 구간 공통', orCur ? `아우트리거 ${orCur.name}` : '아우트리거 신장 상태 무관'),
+            orCur ? `${orCode(orCur, orIdx)}.` : '전 구간 공통', orCur ? orCur.name : '신장 상태 무관'),
           h('div', { class: 'vb-stack' }, ors.map((o, i) => vbtn({
             on: perOr && o.id === sel.or, disabled: !perOr, label: `${orCode(o, i)}.`,
             title: perOr ? o.name : `${a.name}은 아우트리거 신장 상태와 관계없이 표가 하나입니다`,

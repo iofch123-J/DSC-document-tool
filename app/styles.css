@@ -553,7 +553,7 @@ table.res-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .vp-frame svg { width: 100%; height: 100%; max-width: 300px; }
 .vp-cap { background: #FCE6A6; border-left: 4px solid var(--amber); padding: 6px 12px; display: flex; flex-direction: column; gap: 1px; }
 .vp-cap b { color: var(--ink); font-size: 14.5px; font-weight: 800; white-space: nowrap; }
-.vp-cap span { color: #7A5A12; font-size: 12px; font-weight: 700; min-height: 1.3em; }
+.vp-cap span { color: #7A5A12; font-size: 12px; font-weight: 700; min-height: 1.3em; word-break: keep-all; }
 /* picture + caption on the left, its option buttons stacked on the right (full height, joined) */
 .vp-body { display: grid; grid-template-columns: minmax(0, 1fr) 92px; gap: 8px; align-items: stretch; }
 .vb-stack { display: flex; flex-direction: column; }
