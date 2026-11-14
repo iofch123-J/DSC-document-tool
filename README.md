@@ -2,6 +2,8 @@
 
 정격하중표(Rated Load Chart) 문서를 만드는 브라우저 기반 도구입니다. 빌드 과정 없이 동작하는 정적 웹앱이라 GitHub Pages에 그대로 올려 쓸 수 있습니다.
 
+**주소: https://tinyurl.com/dscdoc** (→ https://iofch123-j.github.io/DSC-document-tool/)
+
 - **이 저장소에는 프로그램 코드만 들어 있습니다.** 실제 기종 데이터는 넣지 않습니다.
 - 두 가지 방식으로 동작합니다 (`app/config.js`의 `API_URL`).
   - **웹 모드**: 구글 시트 '개발 DATABASE'에 붙인 Apps Script(`gas/Code.gs`)를 서버로 씁니다. 제품 분류·사용자 명단은 구글 시트에서 관리하고, 정격하중 데이터·로고는 관리자 구글 드라이브에, 이력은 시트의 '이력' 탭에 남습니다. 설정 방법: [docs/WEB-SETUP.md](docs/WEB-SETUP.md)

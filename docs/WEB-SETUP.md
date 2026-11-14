@@ -51,6 +51,7 @@
 1. GitHub 저장소 → **Settings → Pages**.
 2. Source: **Deploy from a branch**, Branch: **main** / **(root)** → **Save**.
 3. 1~2분 뒤 `https://iofch123-j.github.io/DSC-document-tool/` 에서 열립니다.
+4. 짧은 주소: **`tinyurl.com/dscdoc`** → 위 주소로 넘어갑니다 (TinyURL 무료 별칭).
 
 ## 5. 처음 한 번
 
