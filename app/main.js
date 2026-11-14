@@ -186,17 +186,23 @@ async function gateIfNeeded() {
     if (p) { app.session = { ...s, admin: !!p.admin }; return false; }
   }
   forget();
-  root.append(topbar('gate'));
+  let bar = topbar('gate');
+  root.append(bar);
   const page = h('main', { class: 'page gate-page' });
   root.append(page);
   let auth;
+  const before = app.brand;
   if (app.remote) {
     auth = remote.auth;
     try { await auth.init(); } catch (e) { /* the gate shows the network message on the first try */ console.warn(e); }
-  } else auth = localAuth(app, app.staff);
+    if (auth.brand !== undefined) app.brand = auth.brand;   // the company logo is on the entry screen too
+  } else {
+    auth = localAuth(app, app.staff);
+    if (app.brand === undefined) { try { app.brand = (await app.store.getMeta(BRAND_LOGO)) || null; } catch { app.brand = null; } }
+  }
+  if (app.brand !== before) { const next = topbar('gate'); bar.replaceWith(next); bar = next; }
   renderGate(app, page, auth, (s) => {
     if (app.remote) remote.store.setToken(s.token);
-    app.brand = undefined;
     route();
   });
   return true;

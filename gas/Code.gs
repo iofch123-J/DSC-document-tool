@@ -17,7 +17,7 @@
  */
 
 const APP = {
-  version: '1',
+  version: '2',
   folderName: 'DY Rated Load 데이터',
   modelsFile: 'models.json',
   brandFile: 'brand.json',
@@ -47,7 +47,7 @@ function doPost(e) {
 function route_(req) {
   switch (req.action) {
     case 'ping': return { version: APP.version };
-    case 'config': return { suffix: suffix_() };
+    case 'config': return { suffix: suffix_(), brand: brandPublic_() };   // the logo shows on the entry screen too
     case 'checkEmp': return checkEmp_(req.empNo);
     case 'login': return login_(req.empNo, req.cho);
     default: break;
@@ -277,6 +277,18 @@ function metaGet_(key) {
 function metaPut_(key, value) {
   if (!META_FILES[key]) throw err_('알 수 없는 항목입니다.', 'bad');
   withLock_(function () { writeJson_(META_FILES[key], value); });
+  if (key === 'brandLogo') CacheService.getScriptCache().remove('brand');
+}
+
+/** The company logo for everyone (also before login — it is on the entry screen); cached 10 minutes. */
+function brandPublic_() {
+  const cache = CacheService.getScriptCache();
+  const hit = cache.get('brand');
+  if (hit) return JSON.parse(hit);
+  const v = readJson_(APP.brandFile, null);
+  const text = JSON.stringify(v);
+  if (text.length < 90000) cache.put('brand', text, 600);
+  return v;
 }
 
 // ------------------------------------------------------------------------------ 이력

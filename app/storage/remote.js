@@ -121,7 +121,12 @@ export function createRemote(url, { onAuthError } = {}) {
     remote: true,
     suffix: 'HA',
     showOther: false,
-    async init() { auth.suffix = (await call('config')).suffix || 'HA'; },
+    brand: undefined,   // company logo from the server's public config (shown on the entry screen)
+    async init() {
+      const c = await call('config');
+      auth.suffix = c.suffix || 'HA';
+      if ('brand' in c) { auth.brand = c.brand || null; meta.set(BRAND_LOGO, auth.brand); }
+    },
     async checkEmp(empNo) { return call('checkEmp', { empNo }); },
     async login(empNo, seq) {
       const out = await call('login', { empNo, cho: seq.join('') });
