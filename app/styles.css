@@ -494,7 +494,7 @@ table.res-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .vbtn.on .vb-t small { color: rgba(255,255,255,.78); }
 .vbtn:not(:has(.vb-ico)) { padding: 9px 16px; min-width: 96px; }
 .view-result { padding: 16px 18px 18px; }
-.vr-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
+.vr-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin: 0 auto 12px; max-width: 980px; }   /* same box as the table below: title and legend line up with its edges */
 .vr-k { font-size: 11.5px; font-weight: 800; color: var(--muted); letter-spacing: .14em; }
 .vr-title { font-size: 19px; font-weight: 800; color: var(--navy); }
 .vr-table { display: flex; justify-content: center; }
