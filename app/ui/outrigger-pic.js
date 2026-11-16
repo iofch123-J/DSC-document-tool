@@ -57,5 +57,5 @@ export function outriggerPicture(pct) {
   P(rect(xj - jw / 2 - 4, jTop - 9, jw + 8, 11), INK);
   P(rect(xj - jw / 2, jBot - 10, jw, 10), edge);
   P(rrect(xj - padW / 2, G - padH, padW, padH, 3), INK);
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="52 40 840 520" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="아우트리거 ${all ? '전 구간' : `${Math.round(p * 100)}% 신장`}">${out.join('')}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="22 22 896 560" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="아우트리거 ${all ? '전 구간' : `${Math.round(p * 100)}% 신장`}">${out.join('')}</svg>`;
 }

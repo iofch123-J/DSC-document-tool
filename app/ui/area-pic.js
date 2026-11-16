@@ -129,7 +129,7 @@ export function areaPicture(areas, active) {
   // Framing: one fixed view for every area (only the colours change), zoomed in on the truck and set a
   // little low so the fan above it shows (the side area); 10 % smaller than the tightest crop.
   const on = areas.find((a) => a.id === active);
-  const VW = 1160 / 0.9, VH = 690 / 0.9;
+  const VW = 1160 / 0.9, VH = VW / 1.6;              // 16:10 like the picture frames
   const vx = 485 - VW / 2, vy = 240 - VH / 2;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${f(vx)} ${f(vy)} ${f(VW)} ${f(VH)}" `
     + `width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="작업영역${on ? ` ${on.name}` : ''}">${out.join('')}</svg>`;
