@@ -612,7 +612,11 @@ table.res-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .gate-cbtn:active { background: var(--navy); color: #fff; }
 .gate-ex { font-weight: 600; margin-left: 4px; }
 .gate-typed { display: flex; align-items: center; gap: 6px; height: 40px; margin: 0 0 10px; }
-.gate-ch { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border: 1.5px solid var(--navy); background: #fff; color: var(--navy); font-size: 20px; font-weight: 800; }
+.gate-ch { position: relative; width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center; border: 1.5px solid var(--navy); background: #fff; color: var(--navy); font: inherit; font-size: 20px; font-weight: 800; cursor: pointer; }
+.gate-ch:hover:not(:disabled) { border-color: var(--red); color: var(--red); text-decoration: line-through; }
+.gate-ch:hover:not(:disabled)::after { content: '×'; position: absolute; top: -8px; right: -8px; width: 16px; height: 16px; border-radius: 50%; background: var(--red); color: #fff; font-size: 12px; line-height: 16px; text-align: center; text-decoration: none; }
+.gate-ch:disabled { cursor: default; }
+.gate-undo { font-size: 12px; margin-left: 6px; }
 
 .gate-note { color: var(--muted); font-size: 12.5px; margin: 10px 2px 0; }
 @media (max-width: 560px) { .gate-cho { grid-template-columns: repeat(5, 1fr); } }

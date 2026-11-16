@@ -123,8 +123,17 @@ export function renderGate(app, main, auth, onEnter) {
     if (st.emp) {
       card.append(h('div', { class: 'gate-step now' },
         h('div', { class: 'gate-h' }, h('span', { class: 'f-no' }, '2'), '이름 초성을 순서대로', h('small', { class: 'muted gate-ex' }, '예: 홍길동 → ㅎ ㄱ ㄷ')),
+        // a typed 초성 can be tapped to erase it (and any typed after it) — until the last one, which is
+        // judged at once
         h('div', { class: 'gate-typed', 'aria-label': `입력한 초성 ${st.seq.join(' ')}` },
-          st.seq.length ? st.seq.map((c) => h('span', { class: 'gate-ch' }, c)) : h('span', { class: 'muted' }, '초성 버튼을 누르세요')),
+          st.seq.length
+            ? [...st.seq.map((c, i) => h('button', {
+              type: 'button', class: 'gate-ch', disabled: st.busy ? true : null,
+              title: i === st.seq.length - 1 ? '눌러서 지우기' : '눌러서 여기부터 지우기',
+              'aria-label': `${i + 1}번째 초성 ${c} 지우기`,
+              onclick: () => { if (st.busy) return; st.seq = st.seq.slice(0, i); say(''); paint(); },
+            }, c)), st.busy ? null : h('span', { class: 'muted gate-undo' }, '잘못 누른 초성은 눌러서 지우세요')]
+            : h('span', { class: 'muted' }, '초성 버튼을 누르세요')),
         h('div', { class: 'gate-cho' }, [...CHOSUNG, ...(auth.showOther ? [OTHER] : [])].map((c) => h('button', {
           class: 'gate-cbtn', disabled: st.busy ? true : null, onclick: () => press(c),
         }, c)))));
