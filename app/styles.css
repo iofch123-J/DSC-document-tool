@@ -27,8 +27,7 @@ a { color: var(--navy3); }
 /* top bar: white header, brand left, 사용자/관리자 pill toggle right */
 .topbar { height: 66px; padding-bottom: 3px; background: #fff; position: sticky; top: 0; z-index: 20; border-bottom: 1px solid var(--line2); }
 /* content held to the page's max width (same side padding as .page) so it lines up with the cards below */
-.topbar-in { height: 100%; max-width: 1480px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; gap: 14px; }
-.topbar.user .topbar-in { max-width: 1320px; }
+.topbar-in { height: 100%; max-width: 1320px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; gap: 14px; }
 /* CI colour band (DY navy → blue → sky) along the bottom of the bar */
 .topbar::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, #073773 0%, #073773 38%, #006AAC 70%, #29AAE2 100%); }
 .brand { display: flex; align-items: center; gap: 14px; text-decoration: none; min-width: 0; }
@@ -65,7 +64,7 @@ a { color: var(--navy3); }
 .brand-prev img { height: 44px; width: auto; border: 1px solid var(--line2); padding: 4px 8px; background: #fff; }
 .ico { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-.page { max-width: 1480px; margin: 0 auto; padding: 22px 24px 60px; }
+.page { max-width: 1320px; margin: 0 auto; padding: 22px 24px 60px; }
 .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 18px; }
 .page-head h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -.02em; color: var(--navy); }
 .page-head .sub { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
@@ -370,7 +369,6 @@ table.chart { border-collapse: collapse; font-size: 13px; font-variant-numeric: 
 .chart td.na { background: #F1F3F6; }
 .chart tr.r5 td, .chart tr.r5 th { border-bottom: 1px solid #8D9DAF; }
 .link-btn { display: flex; margin-top: 6px; }
-.page.user { max-width: 1320px; }
 @media (max-width: 900px) {
   .page.user { padding: 18px 16px 48px; }
   .page.user .card:not(.flush) { padding: 14px 16px; }
