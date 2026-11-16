@@ -468,8 +468,7 @@ function renderView(app, main, m, notes, U, onPaint) {
           h('div', { class: 'vr-title' }, title)),
         h('div', { class: 'ed-legend cv-legend' },
           hasFalls ? h('span', { class: 'lg hl', title: `${fl.high} 걸이 구간 (그 외 ${fl.base})` }, fl.high) : null,
-          h('span', { class: 'lg mark' }, '( ) 최대 작업반경'),
-          h('span', { class: 'lg na-lg' }, '작업 불가'))),
+          h('span', { class: 'lg mark' }, '( ) 최대 작업반경'))),
       cond ? h('div', { class: 'vr-table' }, chartTable(m, cond, wk)) : h('p', { class: 'muted' }, '해당 조건의 표가 없습니다.'));
 
     panel.append(groups, result);

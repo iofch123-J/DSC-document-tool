@@ -349,8 +349,8 @@ table.cond-nav { border-collapse: collapse; width: 100%; font-size: 13px; }
 .cn:hover { border-color: var(--navy3); }
 .cn.on { background: var(--navy); border-color: var(--navy); color: #fff; font-weight: 700; }
 .cv-head { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; flex-wrap: wrap; }
-.cv-legend { margin: 0 0 0 auto; }
-.lg.na-lg { background: #F1F3F6; }
+.cv-legend { margin: 0 0 0 auto; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }   /* equal boxes */
+.cv-legend .lg { text-align: center; white-space: nowrap; }
 .ct-row { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
 .ct { border: 1px solid var(--line); overflow: hidden; max-width: 100%; }
 .ct-title { display: flex; align-items: baseline; gap: 8px; background: var(--navy); color: #fff; padding: 7px 12px; }
