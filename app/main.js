@@ -109,6 +109,7 @@ const svg = (paths) => {
 };
 const ICON_USERS = '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>';
 const ICON_LOCK = '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>';
+const ICON_POWER = '<path d="M12 3v8"/><path d="M6.4 6.6a8 8 0 1 0 11.2 0"/>';
 
 /** Forget this tab's person (and, on the web, the token and cached data). */
 function forget() {
@@ -148,9 +149,10 @@ function identity() {
   if (!s) return null;
   return h('div', { class: 'who' },
     h('span', { class: 'who-t' }, h('b', null, `${s.empNo} ${s.name}`), h('span', { class: 'who-sfx' }, ' 님 조회중')),
-    h('span', { class: 'who-btns' },
-      s.admin ? h('span', { class: 'chip who-admin' }, '관리자') : null,
-      h('button', { class: 'btn sm who-out', onclick: signOut, title: '이 탭의 사용을 마치고 진입 화면으로 돌아갑니다' }, '종료')));
+    h('button', {
+      type: 'button', class: 'who-out', onclick: signOut, 'aria-label': '종료',
+      title: '종료 — 이 탭의 사용을 마치고 진입 화면으로 돌아갑니다',
+    }, svg(ICON_POWER)));
 }
 
 // "DY | Rated Load": the company logo (or a DY wordmark when no logo is registered) + product name
@@ -160,7 +162,7 @@ function topbar(mode) {
   // the bar spans the window; its content is held to the same max width as the page below
   return h('header', { class: `topbar ${mode}` }, h('div', { class: 'topbar-in' },
     h('a', { class: 'brand', href: '#/', title: 'DY Rated Load — 정격하중표 문서 도구' },
-      logo ? h('img', { class: 'brand-logo', src: logo, alt: 'DY' }) : h('span', { class: 'brand-mark' }, 'DY'),
+      logo ? h('img', { class: 'brand-logo', src: logo, alt: 'DY', onload: () => fitTopbar() }) : h('span', { class: 'brand-mark' }, 'DY'),
       h('span', { class: 'brand-div' }),
       h('span', { class: 'brand-text' },
         h('span', { class: 'brand-name' }, 'Rated Load'),
@@ -176,6 +178,30 @@ function topbar(mode) {
         }, svg(ICON_LOCK), '관리자')))),
   );
 }
+
+/**
+ * Fit the top bar to the window, keeping one row as long as possible:
+ *  ① logo · Rated Load | name 님 조회중 ⏻ · 사용자/관리자 (right-aligned)
+ *  ② the same with the logo only (the 'Rated Load · 정격하중표 문서 도구' text goes)
+ *  ③ administrators: name ⏻ above the 사용자/관리자 toggle, both right-aligned (two rows);
+ *     everyone else: the toggle is hidden (the admin side is closed to them anyway)
+ */
+function fitTopbar(bar = document.querySelector('.topbar')) {
+  const inner = bar?.querySelector('.topbar-in');
+  const brand = bar?.querySelector('.brand');
+  const right = bar?.querySelector('.tb-right');
+  if (!inner || !brand || !right) return;
+  const admin = !secured() || !!app.session?.admin;
+  for (const cls of [[], ['tb-logo'], ['tb-logo', admin ? 'tb-stack' : 'tb-notoggle']]) {
+    bar.classList.remove('tb-logo', 'tb-stack', 'tb-notoggle');
+    bar.classList.add(...cls);
+    const cs = getComputedStyle(inner);
+    const room = inner.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    if (brand.offsetWidth + right.offsetWidth + 16 <= room) return;
+  }
+}
+window.addEventListener('resize', () => fitTopbar());
+document.fonts?.ready.then(() => fitTopbar());
 
 /** Entry screen (사번 → 이름 초성). Returns true when it took over the page. */
 async function gateIfNeeded() {
@@ -228,6 +254,7 @@ async function route() {
   }
 
   root.append(topbar(admin ? 'admin' : 'user'));
+  fitTopbar();
   const main = h('main', { class: `page ${admin ? 'admin' : 'user'}` });
   root.append(main);
 
