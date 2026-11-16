@@ -25,7 +25,7 @@ export function outriggerPicture(pct) {
   const xj = Math.max(X0 + L * p, 520);
   const jw = 40;                 // jack housing
   const jTop = 272, jBot = 406;
-  const by = 276, bh = 36;       // box beam, at the top of the jack
+  const bh = 36, by = 276 + bh * 0.6;   // box beam, set down 60 % of its height from the top of the jack
   const padW = 74, padH = 12;
   const BEAM = '#8E9DAD', BEAM_E = '#6B7A8B';   // the beam is grey like the top view's outrigger beams
   const beam = all ? BEAM : BLUE;                // jack: blue (grey for 'all')
