@@ -562,7 +562,8 @@ table.res-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 /* winch: its picture spans picture + caption height of the other two, so all three button stacks line up */
 .vp-winch .vp-body { flex: 1; }
 .vp-pic.tall .vp-frame { flex: 1; height: auto; min-height: 170px; }
-.vp-frame.blank { color: var(--muted); font-size: 12px; font-weight: 700; background: var(--hatch); }
+.vp-frame.pic { position: relative; }
+.vp-frame.pic img { position: absolute; top: 8px; left: 12px; width: calc(100% - 24px); height: calc(100% - 16px); object-fit: contain; }
 .vp-col .vbtn { min-width: 0; justify-content: center; padding: 9px 8px; }
 .vp-col .vbtn .vb-t { align-items: center; }
 @media (max-width: 1100px) {

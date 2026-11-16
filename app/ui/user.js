@@ -365,6 +365,8 @@ function chartTable(m, cond, winch) {
 
 // 조회: three button groups (작업영역 · 아우트리거 · 윈치) pick ONE table.
 const OR_CODES = ['MAX', 'MID', 'MIN'];
+// boom tip with both hooks: the hook of the chosen winch in red, the other one greyed out
+const WINCH_PIC = { main: 'img/winch-main.png', aux: 'img/winch-aux.png' };
 
 function renderView(app, main, m, notes, U, onPaint) {
   const conds = conditions(m);
@@ -378,6 +380,7 @@ function renderView(app, main, m, notes, U, onPaint) {
   const rear = areas.find((a) => a.name === '후방') || areas[0];
   const maxOr = ors.find((o) => o.code === 'MAX') || [...ors].sort((a, b) => (b.pct ?? 0) - (a.pct ?? 0))[0];
   const sel = (U.view = { area: rear?.id, or: maxOr?.id, winch: 'main' });
+  for (const src of Object.values(WINCH_PIC)) new Image().src = src;   // both ready, so switching winch doesn't flicker
 
   const orCode = (o, i) => o.code || (ors.length === 3 ? OR_CODES[i] : o.short || o.name);
   const curArea = () => areas.find((a) => a.id === sel.area);
@@ -443,7 +446,8 @@ function renderView(app, main, m, notes, U, onPaint) {
         h('div', { class: 'vb-label' }, '윈치'),
         h('div', { class: 'vp-body' },
           h('div', { class: 'vp-pic tall' },
-            h('div', { class: 'vp-frame blank', role: 'img', 'aria-label': '윈치 그림 (준비 중)' }, h('span', null, '윈치 그림 준비 중'))),
+            h('div', { class: 'vp-frame pic' },
+              h('img', { src: WINCH_PIC[wk === 'main' ? 'main' : 'aux'], alt: wk === 'main' ? '메인 후크 사용 (보조 후크는 흐리게)' : '보조 후크 사용 (메인 후크는 흐리게)' }))),
           h('div', { class: 'vb-stack' },
             vbtn({ on: wk === 'main', label: '메인', sub: S.winches.main.labelEn || 'MAIN WINCH', onclick: () => { sel.winch = 'main'; } }),
             vbtn({
