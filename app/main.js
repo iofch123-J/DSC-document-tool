@@ -148,8 +148,9 @@ function identity() {
   if (!s) return null;
   return h('div', { class: 'who' },
     h('span', { class: 'who-t' }, h('b', null, `${s.empNo} ${s.name}`), h('span', { class: 'who-sfx' }, ' 님 조회중')),
-    s.admin ? h('span', { class: 'chip who-admin' }, '관리자') : null,
-    h('button', { class: 'btn sm who-out', onclick: signOut, title: '이 탭의 사용을 마치고 진입 화면으로 돌아갑니다' }, '종료'));
+    h('span', { class: 'who-btns' },
+      s.admin ? h('span', { class: 'chip who-admin' }, '관리자') : null,
+      h('button', { class: 'btn sm who-out', onclick: signOut, title: '이 탭의 사용을 마치고 진입 화면으로 돌아갑니다' }, '종료')));
 }
 
 // "DY | Rated Load": the company logo (or a DY wordmark when no logo is registered) + product name
@@ -164,13 +165,15 @@ function topbar(mode) {
       h('span', { class: 'brand-text' },
         h('span', { class: 'brand-name' }, 'Rated Load'),
         h('span', { class: 'brand-sub' }, '정격하중표 문서 도구'))),
-    mode === 'gate' ? null : identity(),
-    mode === 'gate' ? null : h('nav', { class: 'mode-toggle', 'aria-label': '화면 전환' },
-      h('a', { class: mode === 'user' ? 'on' : '', href: '#/' }, svg(ICON_USERS), '사용자'),
-      h('a', {
-        class: `${mode === 'admin' ? 'on' : ''} ${adminLocked ? 'locked' : ''}`, href: '#/admin',
-        title: adminLocked ? '사용자 명단에서 관리자로 지정된 사람만 들어갈 수 있습니다' : '',
-      }, svg(ICON_LOCK), '관리자'))),
+    // right side: who is using it + the 사용자/관리자 toggle — one row, or stacked on narrow screens
+    mode === 'gate' ? null : h('div', { class: 'tb-right' },
+      identity(),
+      h('nav', { class: 'mode-toggle', 'aria-label': '화면 전환' },
+        h('a', { class: mode === 'user' ? 'on' : '', href: '#/' }, svg(ICON_USERS), '사용자'),
+        h('a', {
+          class: `${mode === 'admin' ? 'on' : ''} ${adminLocked ? 'locked' : ''}`, href: '#/admin',
+          title: adminLocked ? '사용자 명단에서 관리자로 지정된 사람만 들어갈 수 있습니다' : '',
+        }, svg(ICON_LOCK), '관리자')))),
   );
 }
 

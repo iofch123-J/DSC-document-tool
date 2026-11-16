@@ -38,7 +38,7 @@ a { color: var(--navy3); }
 .brand-text { display: flex; flex-direction: column; line-height: 1.15; white-space: nowrap; }
 .brand-name { font-size: 19px; font-weight: 800; color: #073773; letter-spacing: -.01em; }
 .brand-sub { font-size: 11.5px; color: var(--muted); letter-spacing: .02em; }
-.mode-toggle { margin-left: auto; flex: none; display: flex; gap: 2px; padding: 3px; background: var(--steel2); border: 1px solid var(--line2); border-radius: 999px; }
+.mode-toggle { flex: none; display: flex; gap: 2px; padding: 3px; background: var(--steel2); border: 1px solid var(--line2); border-radius: 999px; }
 .mode-toggle a { display: flex; align-items: center; gap: 5px; padding: 5px 13px; border-radius: 999px; font-size: 13px; font-weight: 700; color: #5B6670; text-decoration: none; white-space: nowrap; transition: background .15s, color .15s; }
 .mode-toggle a .ico { width: 15px; height: 15px; }
 .mode-toggle a:hover { color: var(--navy); }
@@ -622,9 +622,10 @@ table.res-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 @media (max-width: 560px) { .gate-cho { grid-template-columns: repeat(5, 1fr); } }
 
 /* top bar: "20000HA 홍길동 님 조회중" */
-.who { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); white-space: nowrap; min-width: 0; }
+.tb-right { margin-left: auto; display: flex; align-items: center; gap: 10px; min-width: 0; }
+.who { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); white-space: nowrap; min-width: 0; }
+.who-btns { display: flex; align-items: center; gap: 8px; }
 .who b { color: var(--navy); font-weight: 800; letter-spacing: .02em; }
-.who + .mode-toggle { margin-left: 10px; }
 .who-admin { background: var(--navy); color: #fff; }
 /* 관리자 badge and 종료 button: same box */
 .who .who-admin, .who .who-out { box-sizing: border-box; height: 26px; min-width: 56px; padding: 0 10px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; letter-spacing: .02em; border: 1.5px solid var(--navy); }
@@ -632,8 +633,20 @@ table.res-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .who.off { text-decoration: none; color: #9A6406; font-weight: 700; border: 1px solid var(--amber); padding: 3px 8px; background: var(--warnT); }
 .mode-toggle a.locked { opacity: .45; }
 .denied { max-width: 560px; margin: 30px auto; border-top: 4px solid var(--red); }
-@media (max-width: 760px) { .who-sfx { display: none; } }
-@media (max-width: 560px) { .topbar:not(.gate) .brand-div, .topbar:not(.gate) .brand-text { display: none; } .who { gap: 6px; font-size: 12px; } .who .who-admin { display: none; } }
+/* narrower screens: the right side stacks, right-aligned — ① who · toggle on one row, ② who above the toggle,
+   ③ name · buttons · toggle on three rows (phones); the bar grows to fit */
+@media (max-width: 860px) {
+  .topbar:not(.gate) { height: auto; }
+  .topbar:not(.gate) .topbar-in { height: auto; min-height: 63px; padding-top: 8px; padding-bottom: 11px; }
+  .tb-right { flex-direction: column; align-items: flex-end; gap: 6px; }
+  .u-sec { scroll-margin-top: 104px; }
+}
+@media (max-width: 600px) {
+  .who { flex-direction: column; align-items: flex-end; gap: 6px; font-size: 12px; }
+  .topbar:not(.gate) { position: relative; }   /* tall on phones: scrolls away instead of covering the page */
+  .u-sec { scroll-margin-top: 12px; }
+}
+@media (max-width: 560px) { .topbar:not(.gate) .brand-div, .topbar:not(.gate) .brand-text { display: none; } }
 
 /* admin page */
 .card.sec-card { border-left: 5px solid var(--navy); }
