@@ -1,5 +1,5 @@
 // 관리자 → 보안관리: 사용자 명단 (사번 · 이름 · 관리자) and the access history.
-import { h, clear, toast, dialog, confirmBox, download, pickFile, fmtDate } from './dom.js';
+import { h, clear, toast, dialog, confirmBox, download, pickFile, fmtDate, onEnter } from './dom.js';
 import {
   STAFF, DEFAULT_SUFFIX, LOG_TYPES, securityOn, rosterProblems, parseStaffXlsx, empNo, normEmp, choSeq, describeLog,
 } from '../core/security.js';
@@ -87,13 +87,17 @@ export async function renderSecurity(app, main, onSaved) {
       h('div', null, h('b', null, work.people.length), h('span', null, '명')),
       h('div', null, h('b', null, admins), h('span', null, '관리자')),
       h('label', { class: 'sec-suffix' }, h('span', null, '사번 기본 뒷자리'),
-        h('input', { class: 'inp', value: work.suffix, maxlength: 6, oninput: (e) => { work.suffix = e.target.value; dirty = true; saveBtn.disabled = false; } }),
+        h('input', {
+          class: 'inp', value: work.suffix, maxlength: 6,
+          oninput: (e) => { work.suffix = e.target.value; dirty = true; saveBtn.disabled = false; },
+          onkeydown: onEnter(() => { if (!saveBtn.disabled) save(); }),
+        }),
         h('small', { class: 'muted' }, '진입 화면에 미리 채워집니다 (예: 26000 + HA)')),
       work.fileName ? h('div', { class: 'pdb-file' }, h('span', null, work.fileName), h('small', null, saved?.updatedAt ? `저장 ${fmtDate(saved.updatedAt)}` : '저장 전')) : null));
 
     // add one person
-    const nNum = h('input', { class: 'inp', placeholder: '사번 (예: 26011)', inputmode: 'text' });
-    const nName = h('input', { class: 'inp', placeholder: '이름' });
+    const nNum = h('input', { class: 'inp', placeholder: '사번 (예: 26011)', inputmode: 'text', onkeydown: onEnter(() => add()) });
+    const nName = h('input', { class: 'inp', placeholder: '이름', onkeydown: onEnter(() => add()) });
     const nAdmin = h('input', { type: 'checkbox' });
     const add = () => {
       const raw = nNum.value.trim();
@@ -103,6 +107,7 @@ export async function renderSecurity(app, main, onSaved) {
       if (work.people.some((p) => p.empNo === emp)) { toast(`사번 ${emp}은(는) 이미 명단에 있습니다.`, 'warn'); return; }
       work.people.push({ empNo: emp, name, admin: nAdmin.checked });
       setDirty();
+      rosterCard.querySelector('.sec-add .inp')?.focus();   // ready for the next person
     };
     rosterCard.append(h('div', { class: 'sec-add' }, nNum, nName,
       h('label', { class: 'chk' }, nAdmin, '관리자'), h('button', { class: 'btn', onclick: add }, '＋ 추가')));

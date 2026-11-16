@@ -1,5 +1,5 @@
 // "PDF" — build the document in the browser, preview and download.
-import { h, clear, toast, download, safeName } from './dom.js';
+import { h, clear, toast, download, safeName, onEnter } from './dom.js';
 import { planPages } from '../pdf/render.js';
 import { makePdf } from './pdfgen.js';
 import { logEvent } from '../core/security.js';
@@ -29,7 +29,10 @@ export function renderPdf(app, el) {
   const radio = (val, label, desc) => h('label', { class: `opt ${o.mode === val ? 'on' : ''}` },
     h('input', { type: 'radio', name: 'mode', checked: o.mode === val, onchange: () => { o.mode = val; rerender(); } }),
     h('div', null, h('b', null, label), h('small', null, desc)));
-  const inp = (key, ph, type = 'text') => h('input', { type, class: 'inp', value: o[key] || '', placeholder: ph, oninput: (e) => { o[key] = e.target.value; } });
+  const inp = (key, ph, type = 'text') => h('input', {
+    type, class: 'inp', value: o[key] || '', placeholder: ph, oninput: (e) => { o[key] = e.target.value; },
+    onkeydown: onEnter(() => { if (!btn.disabled) generate(); }),
+  });
 
   const status = h('div', { class: 'pdf-status' });
   const preview = h('div', { class: 'pdf-preview' }, h('div', { class: 'ph' }, h('p', null, "왼쪽에서 옵션을 고른 뒤 'PDF 만들기'를 누르세요."), h('p', { class: 'muted' }, `${pages.length}페이지 (표지 1 + 조건별 ${pages.length - 1})`)));

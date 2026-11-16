@@ -48,10 +48,32 @@ export function dialog(title, body, buttons = [{ label: '확인', value: true, k
       h('div', { class: 'dlg-f' }, buttons.map((b) => h('button', { class: `btn ${b.kind || ''}`, onclick: () => close(b.value) }, b.label))),
     );
     d.addEventListener('cancel', (e) => { e.preventDefault(); close(null); });
+    // Enter in a text field (or list) presses the main button, like a form's submit — not while a Korean
+    // syllable is still being composed (that Enter only finishes the character)
+    const main = buttons.find((b) => b.kind === 'primary');
+    d.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' || e.isComposing || e.keyCode === 229 || !main) return;
+      if (!isField(e.target)) return;
+      e.preventDefault();
+      close(main.value);
+    });
     document.body.append(d);
     d.showModal();
+    const first = [...d.querySelectorAll('.dlg-b input, .dlg-b select')].find(isField);
+    if (first) { first.focus(); if (first.select && first.type !== 'date') first.select(); }
   });
 }
+
+/** A text-like input or a select (not a checkbox, radio, button or file picker). */
+function isField(el) {
+  if (el instanceof HTMLSelectElement) return true;
+  return el instanceof HTMLInputElement && !['checkbox', 'radio', 'button', 'submit', 'reset', 'file', 'range', 'color'].includes(el.type);
+}
+
+/** Enter (finished typing, not mid-syllable) → fn. For a field that sits next to its own button. */
+export const onEnter = (fn) => (e) => {
+  if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); fn(); }
+};
 
 export const confirmBox = (title, body, ok = '확인', danger = false) =>
   dialog(title, body, [{ label: '취소', value: false }, { label: ok, value: true, kind: danger ? 'danger' : 'primary' }]);
