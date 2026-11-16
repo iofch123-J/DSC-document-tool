@@ -7,7 +7,8 @@ import {
   conditions, activeWinches, columns, radii, rKey, tableKey, getCell, cellKind, isHighFalls, lastUsedRowIndex, winchTitle,
 } from '../core/model.js';
 import { validate } from '../core/validate.js';
-import { areaDiagram, outriggerDiagram, toSvg } from '../pdf/diagrams.js';
+import { areaDiagram, toSvg } from '../pdf/diagrams.js';
+import { outriggerPicture, TRUCK_SRC } from './outrigger-pic.js';
 import { planPages } from '../pdf/render.js';
 import { makePdf } from './pdfgen.js';
 import { logEvent } from '../core/security.js';
@@ -380,7 +381,7 @@ function renderView(app, main, m, notes, U, onPaint) {
   const rear = areas.find((a) => a.name === '후방') || areas[0];
   const maxOr = ors.find((o) => o.code === 'MAX') || [...ors].sort((a, b) => (b.pct ?? 0) - (a.pct ?? 0))[0];
   const sel = (U.view = { area: rear?.id, or: maxOr?.id, winch: 'main' });
-  for (const src of Object.values(WINCH_PIC)) new Image().src = src;   // both ready, so switching winch doesn't flicker
+  for (const src of [...Object.values(WINCH_PIC), TRUCK_SRC]) new Image().src = src;   // both ready, so switching winch doesn't flicker
 
   const orCode = (o, i) => o.code || (ors.length === 3 ? OR_CODES[i] : o.short || o.name);
   const curArea = () => areas.find((a) => a.id === sel.area);
@@ -434,7 +435,7 @@ function renderView(app, main, m, notes, U, onPaint) {
       h('div', { class: 'vp-col' },
         h('div', { class: 'vb-label' }, '아우트리거', !perOr ? h('span', { class: 'vb-note' }, `${a.name}은 전 구간 공통`) : null),
         h('div', { class: 'vp-body' },
-          picture(toSvg(outriggerDiagram(orCur ? orCur.pct ?? 1 : 'all'), 'width="100%" preserveAspectRatio="xMidYMid meet"'),
+          picture(outriggerPicture(orCur ? orCur.pct ?? 1 : 'all'),
             orCur ? `${orCode(orCur, orIdx)}.` : '전 구간 공통', orCur ? orCur.name : '신장 상태 무관'),
           h('div', { class: 'vb-stack' }, ors.map((o, i) => vbtn({
             on: perOr && o.id === sel.or, disabled: !perOr, label: `${orCode(o, i)}.`,
