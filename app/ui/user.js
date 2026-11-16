@@ -419,15 +419,16 @@ function renderView(app, main, m, notes, U, onPaint) {
     // Like the printed chart: two pictures on top (working area · outrigger) with a caption,
     // each with its buttons underneath; the pictures follow the selection.
     const orCur = perOr ? ors[orIdx] : null;
-    const picture = (svg, caption, sub) => h('div', { class: 'vp-pic' },
+    // one-line caption under each picture (the buttons already name the choice)
+    const picture = (svg, caption) => h('div', { class: 'vp-pic' },
       h('div', { class: 'vp-frame', html: svg }),
-      h('div', { class: 'vp-cap' }, h('b', null, caption), sub ? h('span', null, sub) : null));
+      h('div', { class: 'vp-cap' }, caption));
     const groups = h('div', { class: 'card vp-wrap' },
       // picture (with its caption) on the left, its buttons stacked vertically on the right
       h('div', { class: 'vp-col' },
         h('div', { class: 'vb-label' }, '작업영역'),
         h('div', { class: 'vp-body' },
-          picture(areaPicture(areas, a.id), `${a.name}영역`, ranges(a)),
+          picture(areaPicture(areas, a.id), ranges(a) || `${a.name}영역`),
           h('div', { class: 'vb-stack' }, areas.map((x) => vbtn({
             on: x.id === sel.area, label: x.name,
             onclick: () => { sel.area = x.id; },
@@ -435,8 +436,7 @@ function renderView(app, main, m, notes, U, onPaint) {
       h('div', { class: 'vp-col' },
         h('div', { class: 'vb-label' }, '아우트리거', !perOr ? h('span', { class: 'vb-note' }, `${a.name}은 전 구간 공통`) : null),
         h('div', { class: 'vp-body' },
-          picture(outriggerPicture(orCur ? orCur.pct ?? 1 : 'all'),
-            orCur ? `${orCode(orCur, orIdx)}.` : '전 구간 공통', orCur ? orCur.name : '신장 상태 무관'),
+          picture(outriggerPicture(orCur ? orCur.pct ?? 1 : 'all'), orCur ? orCur.name : '신장 상태 무관'),
           h('div', { class: 'vb-stack' }, ors.map((o, i) => vbtn({
             on: perOr && o.id === sel.or, disabled: !perOr, label: `${orCode(o, i)}.`,
             title: perOr ? o.name : `${a.name}은 아우트리거 신장 상태와 관계없이 표가 하나입니다`,
