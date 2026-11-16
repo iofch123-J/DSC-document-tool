@@ -1,8 +1,8 @@
 // 조회 screen: working-area picture — top view of the cargo crane truck (front to the left) over the
 // working-area fans. Redrawn from a product render: simplified cab, see-through cargo bed, and the crane
 // in blue (sub-frame with its two cylinders, slewing ring, hoses, telescopic boom, front and rear outriggers).
-// Coordinates are those of the 1024 × 650 render; framing and fan sizes match the old drawing exactly
-// (pdf/diagrams.js areaDiagram, which the PDF keeps using).
+// Coordinates are those of the 1024 × 650 render; fan sizes match the old drawing (pdf/diagrams.js
+// areaDiagram, which the PDF keeps using), the framing is zoomed in on the truck.
 import { areaDrawR } from '../pdf/diagrams.js';
 
 const BLUE = '#3F6DB5', BLUE_D = '#244C8A', BLUE_DD = '#183764', BLUE_L = '#6F94D0';
@@ -28,7 +28,7 @@ function sectorPath(cx, cy, R, a1, a2) {
 /** SVG markup: the truck over all working-area fans, the active one in amber. */
 export function areaPicture(areas, active) {
   const CX = 345, CY = 350;                     // slewing centre of the crane
-  const K = 5.29;                               // scale against the old drawing (same framing, ~5.3× strokes)
+  const K = 5.29;                               // fan sizes and strokes ≈ 5.3× the old drawing
   const RMAX = 140 * K;
   const out = [];
   const P = (d, fill, stroke = null, sw = 0, extra = '') => out.push(
@@ -123,7 +123,14 @@ export function areaPicture(areas, active) {
   P(rect(906, 333, 14, 34), BLUE_L, BLUE_D, 3.5);
   P('M 920 341 A 9 9 0 0 1 920 359 Z', INK);
 
+  // Framing: zoomed in so the truck fills the frame like the other two pictures (fans run off the edges).
+  // A side area (a fan pointing up or down) slides the view that way, so most of that fan shows.
   const on = areas.find((a) => a.id === active);
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${f(CX - 120 * K)} ${f(CY - 113 * K)} ${f(300 * K)} ${f(226 * K)}" `
+  const VW = 1160, VH = 690;
+  let vy = 18;
+  const dirs = (on?.ranges || []).map(([a1, a2]) => { let b = a2; while (b <= a1) b += 360; return Math.sin(rad((a1 + b) / 2)); });
+  if (dirs.some((s) => s > 0.6)) vy = -105;          // fan above the truck (counter-clockwise from the rear)
+  else if (dirs.some((s) => s < -0.6)) vy = 141;     // only a fan below the truck
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-95 ${vy} ${VW} ${VH}" `
     + `width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="작업영역${on ? ` ${on.name}` : ''}">${out.join('')}</svg>`;
 }
