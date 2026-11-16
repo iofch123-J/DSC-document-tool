@@ -321,6 +321,24 @@ export function parseRanges(text) {
 
 export const formatRanges = (ranges) => (ranges || []).map(([a, b]) => `${a}° ~ ${b}°`).join(' · ');
 
+/** A working-area range as the crane controller shows it: degrees left/right of the rear, 0 … 180
+ *  (the same both sides). 332~28 → [0, 28] · 28~115 and 245~332 → [28, 115] · 115~245 → [115, 180]. */
+export function slewRange([a1, a2]) {
+  const dev = (a) => { const m = ((a % 360) + 360) % 360; return m <= 180 ? m : 360 - m; };
+  let b = a2;
+  while (b <= a1) b += 360;
+  const passes = (t) => [-360, 0, 360, 720].some((k) => t + k > a1 && t + k < b);
+  const lo = passes(0) ? 0 : Math.min(dev(a1), dev(a2));
+  const hi = passes(180) ? 180 : Math.max(dev(a1), dev(a2));
+  return [lo, hi];
+}
+/** All ranges of an area in that form, each distinct one once: '0°~28°', '28°~115°'. Every model, every
+ *  user-facing place (조회, PDF) — the admin settings keep the 0–360° definition. */
+export const formatSlew = (ranges, gap = '') => [...new Set((ranges || []).map((r) => {
+  const [lo, hi] = slewRange(r);
+  return `${lo}°${gap}~${gap}${hi}°`;
+}))].join(' · ');
+
 export function settingsProblems(model) {
   const out = [];
   const { radius, winches, areas, outriggers } = model.settings;

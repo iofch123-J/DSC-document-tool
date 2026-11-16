@@ -4,7 +4,7 @@ import { h, clear, download, safeName } from './dom.js';
 import { loadCatalog } from '../core/catalog.js';
 import { applyVariant, variantLabel, variantFileTag, hasOption } from '../core/variant.js';
 import {
-  conditions, activeWinches, columns, radii, rKey, tableKey, getCell, cellKind, isHighFalls, lastUsedRowIndex, winchTitle,
+  conditions, activeWinches, columns, radii, rKey, tableKey, getCell, cellKind, isHighFalls, lastUsedRowIndex, winchTitle, formatSlew,
 } from '../core/model.js';
 import { validate } from '../core/validate.js';
 import { areaPicture } from './area-pic.js';
@@ -414,7 +414,7 @@ function renderView(app, main, m, notes, U, onPaint) {
   const option = (label, v) => (hasOption(v)
     ? h('span', null, `${label} ${v}`)
     : h('span', { class: 'off', title: `${label} 없음` }, label));
-  const ranges = (a) => (a.ranges || []).map(([p, q]) => `${p}°~${q}°`).join(' · ');
+  const ranges = (a) => formatSlew(a.ranges);   // as the controller shows it: 0°~28°, 28°~115° …
 
   const panel = h('div', { class: 'view-panel' });
 

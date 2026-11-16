@@ -4,7 +4,7 @@
 
 import {
   conditions, activeWinches, columns, radii, rKey, tableKey, getCell, cellKind,
-  isHighFalls, isVariation, lastUsedRowIndex, referenceCondition, auxWinches, winchTitle, winchShort,
+  isHighFalls, isVariation, lastUsedRowIndex, referenceCondition, auxWinches, winchTitle, winchShort, formatSlew,
 } from '../core/model.js';
 import { areaDiagram, outriggerDiagram } from './diagrams.js';
 import { validate, issueIndex } from '../core/validate.js';
@@ -270,7 +270,7 @@ function drawBand(P, y, model, cond, mode, winches) {
     P.text(lines[2], tx, y + 58, { f: 'b', size: 9.5, color: K.navy3 });
     return x + w;
   };
-  const ranges = (cond.area.ranges || []).map(([a, b]) => `${a}° ~ ${b}°`).join(', ');
+  const ranges = formatSlew(cond.area.ranges, ' ');
   let x = tile(M.l, areaDiagram(model.settings.areas, cond.area.id), 88, ['작업영역  WORKING AREA', cond.area.name, ranges]);
   const o = cond.outrigger;
   const pct = o ? (o.pct ?? 1) : 'all';
@@ -531,7 +531,7 @@ function drawCover(P, model, plan, N, logo, dist, st) {
   for (const a of S.areas) {
     P.rect(M.l, y, c0, rowH, { fill: K.steel });
     const aw = P.text(a.name, M.l + 8, y + 16.5, { f: 'x', size: 9, color: K.navy });
-    P.text((a.ranges || []).map(([p, q]) => `${p}° ~ ${q}°`).join(' · '), M.l + 8 + aw + 5, y + 16.5, { f: 'b', size: 6.3, color: K.navy3 });
+    P.text(formatSlew(a.ranges, ' '), M.l + 8 + aw + 5, y + 16.5, { f: 'b', size: 6.3, color: K.navy3 });
     if (a.perOutrigger) {
       ors.forEach((o, i) => {
         const cx = M.l + c0 + i * cw2;

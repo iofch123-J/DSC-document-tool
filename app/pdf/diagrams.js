@@ -3,6 +3,8 @@
 //   path item: { d, fill, opacity, stroke, sw, dash }
 //   text item: { text, x, y, size, bold, color, anchor }
 
+import { slewRange } from '../core/model.js';
+
 export const NAVY = '#14304D';
 export const AMBER = '#E0940F';
 const INK = '#1F2D3D';
@@ -132,7 +134,8 @@ export function areaDiagram(areas, active = null) {
         else if (c < -0.8) { x = cx - R - 32; y = cy - 4; }    // front: small fan behind the cab, label outside
         else { const rr = R * 0.74; x = cx + rr * c; y = cy - rr * s - (s > 0.5 ? 10 : 4); }
         items.push({ text: a.name, x, y, size: 13, bold: true, color: NAVY, anchor: 'middle' });
-        items.push({ text: `${a1}° ~ ${a2raw}°`, x, y: y + 14, size: 10, bold: true, color: '#4B5B6C', anchor: 'middle' });
+        const [lo, hi] = slewRange([a1, a2raw]);   // as the controller shows it (left/right of the rear)
+        items.push({ text: `${lo}° ~ ${hi}°`, x, y: y + 14, size: 10, bold: true, color: '#4B5B6C', anchor: 'middle' });
       }
     });
   }
