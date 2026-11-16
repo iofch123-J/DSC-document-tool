@@ -647,7 +647,7 @@ table.res-table { width: 100%; border-collapse: collapse; font-size: 14px; }
   .tb-right, .tb-right .who:not(.off) { display: contents; }
   .topbar:not(.gate) .brand { grid-area: brand; }
   .who-t, .who.off { grid-area: name; justify-self: end; font-size: 12px; }
-  .who-btns { grid-area: btns; justify-self: end; }
+  .who-btns { grid-area: btns; justify-self: start; }   /* 관리자 · 종료 from the left, the toggle stays right */
   .tb-right .mode-toggle { grid-area: toggle; }
   .topbar:not(.gate) { position: relative; }   /* taller on phones: scrolls away instead of covering the page */
   .u-sec { scroll-margin-top: 12px; }
