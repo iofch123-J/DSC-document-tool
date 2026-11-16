@@ -186,7 +186,7 @@ export function outriggerFront(pct) {
   const P = (d, fill, stroke = null, sw = 0, extra = {}) => items.push({ d, fill, stroke, sw, ...extra });
 
   P(line(52, G, 880, G), null, '#55595E', 2.2);
-  for (const [frac, lab] of [[0.5, '50%'], [1, '100%']]) {
+  for (const [frac, lab] of [[0, '0%'], [0.5, '50%'], [1, '100%']]) {   // 0 % = the truck's side
     const x = X0 + L * frac;
     P(line(x, 236, x, G + 8), null, '#C2CBD5', 3, { dash: [12, 10] });
     items.push({ text: lab, x, y: G + 52, size: 32, bold: true, color: '#8C97A3', anchor: 'middle' });
