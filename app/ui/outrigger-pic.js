@@ -19,8 +19,10 @@ export function outriggerPicture(pct) {
   const all = pct === 'all';
   const p = all ? 0.3 : Math.max(0.2, Math.min(1, Number(pct) || 0));
   const G = 487;                 // ground line of the drawing
-  const X0 = 438;                // where 0 % would be: 50 % → x 595, 100 % → x 752
-  const L = 314;
+  // extension scale: 50 % stays at x 595, 100 % sits at x 705 (where 85 % used to be), so 0 % lands
+  // right at the truck's side
+  const X0 = 485;
+  const L = 220;
   const xr = 477;                // the beam comes out from behind the cab here
   const xj = Math.max(X0 + L * p, 520);
   const jw = 40;                 // jack housing
@@ -41,7 +43,7 @@ export function outriggerPicture(pct) {
   for (const [frac, lab] of [[0.5, '50%'], [1, '100%']]) {
     const x = X0 + L * frac;
     P(line(x, 236, x, G + 8), null, '#C2CBD5', 3, ' stroke-dasharray="12 10"');
-    out.push(`<text x="${x}" y="${G + 52}" font-size="38" font-weight="800" fill="#8C97A3" text-anchor="middle">${lab}</text>`);
+    out.push(`<text x="${x}" y="${G + 52}" font-size="32" font-weight="800" fill="#8C97A3" text-anchor="middle">${lab}</text>`);
   }
   // ghost of the fully extended outrigger
   if (xj < X0 + L - 2) {
