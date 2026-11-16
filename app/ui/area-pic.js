@@ -108,20 +108,23 @@ export function areaPicture(areas, active) {
   P(circle(CX, CY, 36), null, BLUE_D, 3.5);
   for (let k = 0; k < 16; k++) { const t = rad(k * 22.5 + 11); P(circle(CX + 41 * Math.cos(t), CY + 41 * Math.sin(t), 2.6), '#D6DEE8'); }
 
-  // boom: foot on the turret, base section, telescopic sections, head, hook
-  P(rrect(312, 328, 62, 44, 7), BLUE_D, BLUE_DD, 4);
-  P(rect(318, 336, 436, 28), BLUE, BLUE_D, 4);
+  // boom: slewed 15° counter-clockwise and telescoped out to ~130 % of its stowed length
+  // (drawn along the truck, then turned about the slewing centre)
+  out.push(`<g transform="rotate(-15 ${CX} ${CY})">`);
+  P(rrect(312, 328, 62, 44, 7), BLUE_D, BLUE_DD, 4);           // foot on the turret
+  P(rect(318, 336, 436, 28), BLUE, BLUE_D, 4);                  // base section
   P(rect(330, 342, 414, 4), BLUE_L);
   P(circle(328, 350, 7), '#D6DEE8', BLUE_D, 3);
-  P(rect(754, 338, 52, 24), BLUE, BLUE_D, 3.5);
-  P(rect(763, 344, 36, 12), INK);
-  P(rect(806, 340, 52, 20), BLUE, BLUE_D, 3.5);
-  P(rect(814, 345, 36, 10), INK);
-  P(rect(858, 338, 48, 24), BLUE, BLUE_D, 3.5);
-  P(rect(867, 344, 8, 12), BLUE_D);
-  P(rect(882, 344, 8, 12), BLUE_D);
-  P(rect(906, 333, 14, 34), BLUE_L, BLUE_D, 3.5);
-  P('M 920 341 A 9 9 0 0 1 920 359 Z', INK);
+  P(rect(754, 338, 140, 24), BLUE, BLUE_D, 3.5);                // 2nd section, out
+  P(rect(764, 343, 120, 3), BLUE_L);
+  P(rect(894, 340, 139, 20), BLUE, BLUE_D, 3.5);                // 3rd section, out
+  P(rect(904, 344, 119, 3), BLUE_L);
+  P(rect(1033, 338, 48, 24), BLUE, BLUE_D, 3.5);                // head
+  P(rect(1042, 344, 8, 12), BLUE_D);
+  P(rect(1057, 344, 8, 12), BLUE_D);
+  P(rect(1081, 333, 14, 34), BLUE_L, BLUE_D, 3.5);
+  P('M 1095 341 A 9 9 0 0 1 1095 359 Z', INK);                 // hook
+  out.push('</g>');
 
   // Framing: one fixed view for every area (only the colours change), zoomed in on the truck and set a
   // little low so the fan above it shows (the side area); 10 % smaller than the tightest crop.
