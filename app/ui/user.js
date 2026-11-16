@@ -7,7 +7,7 @@ import {
   conditions, activeWinches, columns, radii, rKey, tableKey, getCell, cellKind, isHighFalls, lastUsedRowIndex, winchTitle,
 } from '../core/model.js';
 import { validate } from '../core/validate.js';
-import { areaDiagram, toSvg } from '../pdf/diagrams.js';
+import { areaPicture } from './area-pic.js';
 import { outriggerPicture, TRUCK_SRC } from './outrigger-pic.js';
 import { planPages } from '../pdf/render.js';
 import { makePdf } from './pdfgen.js';
@@ -427,7 +427,7 @@ function renderView(app, main, m, notes, U, onPaint) {
       h('div', { class: 'vp-col' },
         h('div', { class: 'vb-label' }, '작업영역'),
         h('div', { class: 'vp-body' },
-          picture(toSvg(areaDiagram(areas, a.id), 'width="100%" preserveAspectRatio="xMidYMid meet"'), `${a.name}영역`, ranges(a)),
+          picture(areaPicture(areas, a.id), `${a.name}영역`, ranges(a)),
           h('div', { class: 'vb-stack' }, areas.map((x) => vbtn({
             on: x.id === sel.area, label: x.name,
             onclick: () => { sel.area = x.id; },
