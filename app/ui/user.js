@@ -358,7 +358,10 @@ function chartTable(m, cond, winch) {
         h('th', { class: 'rad' }, rKey(r)),
         cols.map((c) => {
           const k = cellKind(getCell(m, tk, c.id, r));
-          if (k.type === 'num') return h('td', { class: `${isHighFalls(m, winch, k.v) ? 'hl' : ''} ${ri % 2 ? 'z' : ''}` }, k.v.toLocaleString('en-US'));
+          if (k.type === 'num') {
+            const hf = isHighFalls(m, winch, k.v);
+            return h('td', { class: `${hf ? 'hl' : ''} ${ri % 2 ? 'z' : ''}`, dataset: hf ? { v: k.v } : null }, k.v.toLocaleString('en-US'));
+          }
           if (k.type === 'mark') return h('td', { class: 'mark' }, `(${k.v.toFixed(1)})`);
           return h('td', { class: 'na' });
         })))))));
@@ -479,15 +482,42 @@ function renderView(app, main, m, notes, U, onPaint) {
     const fl = cfg.falls;
     const hasFalls = fl?.threshold !== null && fl?.threshold !== undefined && fl?.threshold !== '';
     const title = [a.name, perOr ? `${orCode(ors[orIdx], orIdx)}.` : '아우트리거 전 구간 공통', winchTitle(cfg)].join(' · ');
+    const table = cond ? chartTable(m, cond, wk) : null;
+
+    // Hidden: hold the '6연' legend box to see the high-falls cells at the base falls ('4연').
+    // Per-line pull = the winch's largest load ÷ high falls (12,000 ÷ 6 = 2,000), so at 4 falls the
+    // hook takes at most 8,000 — each high-falls cell shows the smaller of its value and that limit.
+    let fallsBox = null;
+    if (hasFalls) {
+      fallsBox = h('span', { class: 'lg hl', title: `${fl.high} 걸이 구간 (그 외 ${fl.base})` }, fl.high);
+      const nHigh = parseInt(String(fl.high).replace(/[^0-9]/g, ''), 10);
+      const nBase = parseInt(String(fl.base).replace(/[^0-9]/g, ''), 10);
+      const top = maxLoad(wk);
+      if (table && nHigh > 0 && nBase > 0 && nBase < nHigh && top) {
+        const baseMax = Math.floor((top / nHigh) * nBase);
+        const show = (alt) => {
+          fallsBox.textContent = alt ? fl.base : fl.high;
+          fallsBox.classList.toggle('down', alt);
+          for (const td of table.querySelectorAll('td[data-v]')) {
+            const v = Number(td.dataset.v);
+            td.textContent = (alt ? Math.min(v, baseMax) : v).toLocaleString('en-US');
+          }
+        };
+        fallsBox.classList.add('hold');
+        fallsBox.addEventListener('pointerdown', (e) => { e.preventDefault(); fallsBox.setPointerCapture?.(e.pointerId); show(true); });
+        for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) fallsBox.addEventListener(ev, () => show(false));
+        fallsBox.addEventListener('contextmenu', (e) => e.preventDefault());   // long press on phones
+      }
+    }
     const result = h('div', { class: 'card view-result' },
       h('div', { class: 'vr-head' },
         h('div', null,
           h('div', { class: 'vr-k' }, '조회 결과'),
           h('div', { class: 'vr-title' }, title)),
         h('div', { class: 'ed-legend cv-legend' },
-          hasFalls ? h('span', { class: 'lg hl', title: `${fl.high} 걸이 구간 (그 외 ${fl.base})` }, fl.high) : null,
+          fallsBox,
           h('span', { class: 'lg mark' }, '( ) 최대 작업반경'))),
-      cond ? h('div', { class: 'vr-table' }, chartTable(m, cond, wk)) : h('p', { class: 'muted' }, '해당 조건의 표가 없습니다.'));
+      table ? h('div', { class: 'vr-table' }, table) : h('p', { class: 'muted' }, '해당 조건의 표가 없습니다.'));
 
     panel.append(groups, result);
     sel.page = cond ? { condKey: cond.key, winch: wk, label: title } : null;   // what '조회 페이지만 생성' prints
