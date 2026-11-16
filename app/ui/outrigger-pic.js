@@ -25,10 +25,11 @@ export function outriggerPicture(pct) {
   const xj = Math.max(X0 + L * p, 520);
   const jw = 40;                 // jack housing
   const jTop = 272, jBot = 406;
-  const by = 279, bh = 30;       // box beam, just under the jack's top cap
+  const by = 276, bh = 36;       // box beam, at the top of the jack
   const padW = 74, padH = 12;
-  const beam = all ? '#8E9DAD' : BLUE;
-  const edge = all ? '#6B7A8B' : BLUE_D;
+  const BEAM = '#8E9DAD', BEAM_E = '#6B7A8B';   // the beam is grey like the top view's outrigger beams
+  const beam = all ? BEAM : BLUE;                // jack: blue (grey for 'all')
+  const edge = all ? BEAM_E : BLUE_D;
   const out = [`<image href="${TRUCK_SRC}" x="52" y="40" width="528" height="455"/>`];
   const P = (d, fill, stroke = null, sw = 0, extra = '') => out.push(
     `<path d="${d}" fill="${fill || 'none'}"${stroke ? ` stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round"` : ''}${extra}/>`);
@@ -49,8 +50,8 @@ export function outriggerPicture(pct) {
     P(rect(g - padW / 2, G - padH, padW, padH), null, '#B4BFCB', 2.4, ghost);
   }
   // outrigger: box beam into the top of the jack (ㄱ), chromed rod, float pad
-  P(rect(xr, by, xj - xr, bh), beam, edge, 2.4);
-  P(line(xr + 6, by + 9, xj - jw / 2, by + 9), null, all ? '#AEB9C5' : '#86A6DA', 2);
+  P(rect(xr, by, xj - xr, bh), BEAM, BEAM_E, 2.4);
+  P(line(xr + 6, by + 11, xj - jw / 2, by + 11), null, '#AEB9C5', 2);
   P(rect(xj - 10, jBot, 20, G - padH - jBot), '#DCE3EA', '#7D8B9A', 2);
   P(rect(xj - jw / 2, jTop, jw, jBot - jTop), beam, edge, 2.4);
   P(rect(xj - jw / 2 - 4, jTop - 9, jw + 8, 11), INK);
