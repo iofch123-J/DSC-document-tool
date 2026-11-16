@@ -91,12 +91,13 @@ async function productDbCard(app, models) {
   }
   const st = dbStats(db);
   const withData = st.products.filter((p) => registered.has(keyOf(p.name))).length;
+  // category label, then its chips in their own wrapping box (a second line starts under the first chip)
   const groups = [...st.byCat.keys()].map((cat) => h('div', { class: 'pdb-group' },
     h('span', { class: 'pdb-cat' }, cat),
-    st.products.filter((p) => (p.category || '미분류') === cat).map((p) => h('span', {
+    h('div', { class: 'pdb-chips' }, st.products.filter((p) => (p.category || '미분류') === cat).map((p) => h('span', {
       class: `pdb-chip ${registered.has(keyOf(p.name)) ? 'reg' : ''}`,
       title: registered.has(keyOf(p.name)) ? '정격하중 데이터 등록됨' : '정격하중 데이터 미등록',
-    }, p.name))));
+    }, p.name)))));
   return h('div', { class: 'card pdb' }, head,
     h('div', { class: 'pdb-stats' },
       h('div', null, h('b', null, st.configs), h('span', null, '구성')),
