@@ -13,8 +13,9 @@
 //   boom lengths row ("5.3M" …, "S/B (4.5)")
 //   radius rows: radius | loads … | radius | loads …
 //
-// Colour legends: the cell left of "6연 구간"/"2연 구간"/"변동+2연" defines the
-// "more rope falls" fill. The falls threshold is inferred from those colours.
+// Colour legends: the empty cell left of "6연 구간"/"2연 구간"/"변동+2연" — or that text cell itself
+// when it is the coloured one — defines the "more rope falls" fill. The falls threshold is inferred
+// from those colours.
 
 import { readXlsx } from './xlsx.js';
 import { newModel, newBoom, newAuxWinch, uid, parseInput, setCell, getCell, tableKey, DEFAULT_NOTES } from './model.js';
@@ -105,18 +106,32 @@ function parseSheet(sh, warnings) {
       }
       return { winch, rc, end, cols, rows };
     });
+    // Legend entries ("4연 기본", "■ 6연 구간", "■ 6연 변동", "■ 변동+2연" …) on the sub-title row and the
+    // row above it. Whatever the wording, an entry with the HIGHER falls count marks a high-falls colour.
+    // Its colour sample is the empty cell just left of the text, or the text cell itself when coloured.
     const legend = { main: { base: null, high: null, fills: new Set() }, aux: { base: null, high: null, fills: new Set() } };
-    for (let c = 1; c <= sh.maxCol; c++) {
-      const t = txt(sub.row, c);
-      if (!t) continue;
-      const part = parts.reduce((acc, p) => (c >= p.rc - 1 ? p : acc), parts[0]);
-      const lg = legend[part.winch];
-      const base = t.match(/(\d+\s*연)\s*기본/);
-      const high = t.match(/^(\d+\s*연)\s*구간/);
-      const mixed = t.match(/변동\s*\+\s*(\d+\s*연)/);
-      if (base) lg.base = base[1].replace(/\s/g, '');
-      if (high) lg.high = high[1].replace(/\s/g, '');
-      if (high || mixed) { const f = cell(sub.row, c - 1)?.fill; if (f) lg.fills.add(f); }
+    const entries = { main: [], aux: [] };
+    for (const lr of [sub.row - 1, sub.row]) {
+      if (lr < 1) continue;
+      for (let c = 1; c <= sh.maxCol; c++) {
+        const t = txt(lr, c);
+        const n = t.match(/(\d+)\s*연/);
+        if (!n) continue;
+        const part = parts.reduce((acc, p) => (c >= p.rc - 1 ? p : acc), parts[0]);
+        const left = cell(lr, c - 1);
+        const fill = left?.fill && !txt(lr, c - 1) ? left.fill : cell(lr, c)?.fill;
+        entries[part.winch].push({ n: Number(n[1]), fill });
+      }
+    }
+    for (const w of ['main', 'aux']) {
+      const E = entries[w];
+      if (!E.length) continue;
+      const hi = Math.max(...E.map((e) => e.n)), lo = Math.min(...E.map((e) => e.n));
+      legend[w].base = `${lo}연`;
+      if (hi > lo) {
+        legend[w].high = `${hi}연`;
+        for (const e of E) if (e.n === hi && e.fill) legend[w].fills.add(e.fill);
+      }
     }
     blocks.push({ sub, area, parts, legend });
   }
@@ -279,7 +294,11 @@ export function importTemplateWorkbook(wb, fileName = '', { sheet = null } = {})
     if (H.length) {
       const th = Pl.length ? Math.max(...Pl) : 0;
       if (Math.min(...H) > th) cfg.falls.threshold = th;
-      else warnings.push(`${cfg.label}${cfg.capacity ? ` ${cfg.capacity}` : ''}: 줄걸이 색칠 구간이 하나의 기준 하중으로 설명되지 않아 기준값을 비워 둠`);
+      else if (Math.min(...H) === th) {
+        // the boundary value is coloured in some cells and not in others: above it = more falls
+        cfg.falls.threshold = th;
+        warnings.push(`${cfg.label}${cfg.capacity ? ` ${cfg.capacity}` : ''}: ${th.toLocaleString('en-US')} kg 칸이 색칠된 곳과 안 된 곳이 섞여 있어, ${th.toLocaleString('en-US')} kg 초과를 ${cfg.falls.high || '증가 걸이'} 구간으로 봄`);
+      } else warnings.push(`${cfg.label}${cfg.capacity ? ` ${cfg.capacity}` : ''}: 줄걸이 색칠 구간이 하나의 기준 하중으로 설명되지 않아 기준값을 비워 둠`);
     }
     thresholds[key] = cfg.falls.threshold;
   }
