@@ -390,6 +390,23 @@ function renderView(app, main, m, notes, U, onPaint) {
     return conds.find((c) => c.key === (a.perOutrigger ? `${a.id}|${sel.or}` : `${a.id}|all`));
   };
   const winchKey = () => (sel.winch === 'aux' && auxKey ? auxKey : 'main');
+  // winch caption: '6연 최대 12,000kg' — the falls used for the heaviest loads, and the largest load
+  // anywhere in that winch's tables (every condition of the chosen configuration)
+  const maxLoad = (w) => {
+    let top = null;
+    for (const c of conds) for (const col of columns(m, w)) for (const r of radii(m)) {
+      const k = cellKind(getCell(m, tableKey(c.key, w), col.id, r));
+      if (k.type === 'num' && (top === null || k.v > top)) top = k.v;
+    }
+    return top;
+  };
+  const winchCap = Object.fromEntries(['main', auxKey].filter(Boolean).map((w) => {
+    const fl = S.winches[w].falls || {};
+    const multi = fl.threshold !== null && fl.threshold !== undefined && fl.threshold !== '';
+    const falls = (multi ? fl.high : fl.base) || fl.high || fl.base || '';
+    const top = maxLoad(w);
+    return [w, [falls, top !== null && `최대 ${top.toLocaleString('en-US')}${m.info.unit || 'kg'}`].filter(Boolean).join(' ')];
+  }));
   // 'Sub Boom 4.5 m' when chosen; just 'Sub Boom', greyed, when the product goes without it
   const option = (label, v) => (hasOption(v)
     ? h('span', null, `${label} ${v}`)
@@ -446,9 +463,10 @@ function renderView(app, main, m, notes, U, onPaint) {
       h('div', { class: 'vp-col vp-winch' },
         h('div', { class: 'vb-label' }, '윈치'),
         h('div', { class: 'vp-body' },
-          h('div', { class: 'vp-pic tall' },
+          h('div', { class: 'vp-pic' },
             h('div', { class: 'vp-frame pic' },
-              h('img', { src: WINCH_PIC[wk === 'main' ? 'main' : 'aux'], alt: wk === 'main' ? '메인 후크 사용 (보조 후크는 흐리게)' : '보조 후크 사용 (메인 후크는 흐리게)' }))),
+              h('img', { src: WINCH_PIC[wk === 'main' ? 'main' : 'aux'], alt: wk === 'main' ? '메인 후크 사용 (보조 후크는 흐리게)' : '보조 후크 사용 (메인 후크는 흐리게)' })),
+            h('div', { class: 'vp-cap' }, winchCap[wk] || winchTitle(cfg))),
           h('div', { class: 'vb-stack' },
             vbtn({ on: wk === 'main', label: '메인', sub: S.winches.main.labelEn || 'MAIN WINCH', onclick: () => { sel.winch = 'main'; } }),
             vbtn({
