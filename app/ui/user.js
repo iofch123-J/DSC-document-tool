@@ -451,7 +451,7 @@ function renderView(app, main, m, notes, U, onPaint) {
             onclick: () => { sel.area = x.id; },
           }))))),
       h('div', { class: 'vp-col' },
-        h('div', { class: 'vb-label' }, '아우트리거', !perOr ? h('span', { class: 'vb-note' }, `${a.name}은 전 구간 공통`) : null),
+        h('div', { class: 'vb-label' }, '아우트리거'),
         h('div', { class: 'vp-body' },
           picture(outriggerPicture(orCur ? orCur.pct ?? 1 : 'all'), orCur ? orCur.name : '신장 상태 무관'),
           h('div', { class: 'vb-stack' }, ors.map((o, i) => vbtn({
