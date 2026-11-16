@@ -640,6 +640,7 @@ table.res-table { width: 100%; border-collapse: collapse; font-size: 14px; }
   .topbar:not(.gate) { height: auto; }
   .topbar:not(.gate) .topbar-in { height: auto; min-height: 63px; flex-wrap: wrap; row-gap: 8px; padding-top: 9px; padding-bottom: 12px; }
   .tb-right { flex-basis: 100%; margin-left: 0; }
+  .tb-right .mode-toggle { margin-left: auto; }   /* 사용자/관리자 always at the right */
   .u-sec { scroll-margin-top: 112px; }
 }
 @media (max-width: 600px) {
