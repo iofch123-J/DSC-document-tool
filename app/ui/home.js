@@ -1,7 +1,9 @@
 // Model list (home).
 import { h, toast, dialog, confirmBox, download, pickFile, fmtDate, safeName } from './dom.js';
 import { newModel, clone, uid, SCHEMA } from '../core/model.js';
-import { importTemplateXlsx } from '../core/importer.js';
+import { importTemplateWorkbook, chartSheets, sheetsAreModels } from '../core/importer.js';
+import { readXlsx } from '../core/xlsx.js';
+import { hasOption } from '../core/variant.js';
 import { validate } from '../core/validate.js';
 import { PRODUCT_DB, keyOf, parseProductDb, dbStats } from '../core/catalog.js';
 import { BRAND_LOGO, readLogoFile } from '../core/brand.js';
@@ -196,9 +198,31 @@ async function createModel(app) {
 async function importExcel(app) {
   const file = await pickFile('.xlsx');
   if (!file) return;
+  let wb, names;
+  try {
+    wb = await readXlsx(await file.arrayBuffer());
+    names = chartSheets(wb);
+    if (!names.length) throw new Error("'아우트리거 MAX' 같은 구간 제목을 찾지 못했습니다. 기존 정격하중표 엑셀 양식인지 확인하세요.");
+  } catch (e) {
+    await dialog('가져오기 실패', h('p', null, e.message));
+    return;
+  }
+  // several chart sheets: aux-winch capacities of one model, or one model per sheet (a whole tonnage class)?
+  if (names.length > 1) {
+    const guess = sheetsAreModels(names);
+    const mode = await dialog('시트 구성 확인', h('div', null,
+      h('p', null, `정격하중표 시트가 ${names.length}개 있습니다: `, h('b', null, names.join(' · '))),
+      h('ul', null,
+        h('li', null, h('b', null, '시트마다 다른 기종'), ' — 시트 하나를 기종 하나로 가져옵니다. (예: 같은 톤급 전 기종을 모은 파일)'),
+        h('li', null, h('b', null, '한 기종'), ' — 같은 기종을 시트마다 보조 윈치 용량만 다르게 가져옵니다. (예: 3ton · 4ton 시트)')),
+      h('p', { class: 'muted' }, guess ? "시트 이름이 기종명이라 '시트마다 다른 기종'으로 보입니다." : "시트 이름에 기종명이 없어 '한 기종'으로 보입니다.")),
+    [{ label: '취소', value: null }, { label: '한 기종', value: 'one', kind: guess ? '' : 'primary' }, { label: '시트마다 다른 기종', value: 'many', kind: guess ? 'primary' : '' }]);
+    if (!mode) return;
+    if (mode === 'many') { await importSheetsAsModels(app, wb, file.name, names); return; }
+  }
   let res;
   try {
-    res = await importTemplateXlsx(await file.arrayBuffer(), file.name);
+    res = importTemplateWorkbook(wb, file.name);
   } catch (e) {
     await dialog('가져오기 실패', h('p', null, e.message));
     return;
@@ -256,6 +280,96 @@ async function importExcel(app) {
   }
   await app.store.put(model);
   app.go(`#/m/${model.id}/checks`);
+}
+
+/** One model per chart sheet: review names / aux capacity per sheet, then save them all. */
+async function importSheetsAsModels(app, wb, fileName, names) {
+  const dbRows = (await app.store.getMeta(PRODUCT_DB))?.rows || [];
+  const inDb = (n) => dbRows.some((r) => keyOf(r.product) === keyOf(n));
+  const dbSubWinch = (n) => {
+    const s = [...new Set(dbRows.filter((r) => keyOf(r.product) === keyOf(n) && hasOption(r.subWinch)).map((r) => r.subWinch))];
+    return s.length === 1 ? s[0] : '';
+  };
+  const split = (v) => String(v).split(/[,，]/).map((x) => x.trim()).filter(Boolean);
+  const rows = names.map((sheet) => {
+    let it;
+    try {
+      const { model, report } = importTemplateWorkbook(wb, fileName, { sheet });
+      it = { sheet, model, report, v: validate(model) };
+    } catch (e) {
+      return { sheet, tr: h('tr', null, h('td'), h('td', null, sheet), h('td', { colspan: 3, class: 'muted' }, `읽지 못함: ${e.message}`)) };
+    }
+    const W = it.model.settings.winches;
+    const auxKey = Object.keys(W).find((k) => k !== 'main' && W[k].enabled) || null;
+    const chk = h('input', { type: 'checkbox', checked: true, 'aria-label': `${sheet} 가져오기` });
+    const name = h('input', { type: 'text', class: 'inp', value: it.model.info.name });
+    const mark = h('small', { class: 'sm-db' });
+    const cap = auxKey ? h('input', { type: 'text', class: 'inp', value: W[auxKey].capacity || dbSubWinch(it.model.info.name), placeholder: '예: 2.3 ton' }) : null;
+    const sync = () => {
+      if (!dbRows.length) return;
+      const miss = split(name.value).filter((n) => !inDb(n));
+      mark.textContent = miss.length ? `제품 DB에 없음: ${miss.join(', ')}` : '제품 DB와 일치';
+      mark.classList.toggle('bad', miss.length > 0);
+    };
+    name.addEventListener('input', sync);
+    sync();
+    const tr = h('tr', null,
+      h('td', null, chk),
+      h('td', null, sheet),
+      h('td', null, name, mark),
+      h('td', null, cap || h('span', { class: 'muted' }, '없음')),
+      h('td', { class: 'muted' }, `값 ${it.report.cells.toLocaleString('en-US')}칸`, h('br'),
+        h('span', { class: it.v.ng ? 'ng-t' : '' }, `NG ${it.v.ng}`), ` · 주의 ${it.v.warn}`));
+    return { sheet, it, auxKey, chk, name, cap, tr };
+  });
+  const warns = rows.filter((r) => r.it?.report.warnings.length)
+    .map((r) => h('li', null, h('b', null, r.sheet), ' — ', r.it.report.warnings.join(' / ')));
+  const ok = await dialog('엑셀 가져오기 — 시트마다 다른 기종', h('div', { class: 'report sheet-models' },
+    h('p', null, fileName),
+    h('table', { class: 'mini' },
+      h('thead', null, h('tr', null, h('th', null, ''), h('th', null, '시트'), h('th', null, '기종명'), h('th', null, '보조 윈치 (Sub Winch)'), h('th', null, '결과'))),
+      h('tbody', null, rows.map((r) => r.tr))),
+    h('p', { class: 'muted' }, "기종명이 구글 시트 '제품 분류'의 제품명과 같아야 사용자 화면에 연결됩니다. 쉼표로 이름을 여러 개 쓰면 같은 표로 기종을 각각 만듭니다. (예: AB1234, AB1234D)"),
+    warns.length ? h('div', { class: 'warnbox' }, h('b', null, '주의'), h('ul', null, warns)) : null,
+    h('p', { class: 'muted' }, 'NG는 가져온 뒤 각 기종의 검증 탭에서 칸 위치와 함께 확인·수정할 수 있습니다.')),
+  [{ label: '취소', value: false }, { label: '선택한 시트 가져오기', value: true, kind: 'primary' }]);
+  if (!ok) return;
+
+  const existing = await app.store.list();
+  const plan = [];
+  for (const r of rows) {
+    if (!r.it || !r.chk.checked) continue;
+    if (r.cap) r.it.model.settings.winches[r.auxKey].capacity = r.cap.value.trim();
+    const ns = split(r.name.value);
+    if (!ns.length) ns.push(r.it.model.info.name);
+    ns.forEach((n, i) => {
+      const m = i === 0 ? r.it.model : { ...clone(r.it.model), id: uid('m') };
+      m.info.name = n;
+      plan.push({ m, same: existing.find((x) => keyOf(x.info.name) === keyOf(n)) });
+    });
+  }
+  if (!plan.length) return;
+  const dups = plan.filter((p) => p.same);
+  let dup = 'replace';
+  if (dups.length) {
+    dup = await dialog('이미 등록된 기종이 있습니다', h('div', null,
+      h('p', null, dups.map((p) => p.same.info.name).join(', ')),
+      h('ul', null,
+        h('li', null, h('b', null, '데이터 교체'), ' — 붐·보조 윈치 설정과 하중 표를 엑셀 값으로 바꿉니다. 문서번호·유의사항 등 문서 정보는 그대로 둡니다.'),
+        h('li', null, h('b', null, '건너뛰기'), ' — 이미 있는 기종은 그대로 두고 나머지만 가져옵니다.'),
+        h('li', null, h('b', null, '새로 추가'), ' — 같은 이름으로 하나 더 만듭니다.'))),
+    [{ label: '취소', value: null }, { label: '새로 추가', value: 'add' }, { label: '건너뛰기', value: 'skip' }, { label: '데이터 교체', value: 'replace', kind: 'primary' }]);
+    if (!dup) return;
+  }
+  let n = 0;
+  for (const p of plan) {
+    if (p.same && dup === 'skip') continue;
+    if (p.same && dup === 'replace') Object.assign(p.m, { id: p.same.id, createdAt: p.same.createdAt, info: { ...p.same.info, name: p.m.info.name } });
+    await app.store.put(p.m);
+    n++;
+  }
+  toast(`${n}개 기종을 가져왔습니다. 각 기종의 검증 탭에서 NG를 확인하세요.`, 'ok', 5000);
+  reload(app);
 }
 
 function exportBackup(m) {

@@ -1,7 +1,9 @@
 // Import the existing in-house Excel layout of a rated load chart.
 //
-// One workbook = one crane model. Each sheet holds the same layout for ONE aux-winch capacity
-// (e.g. sheet "3ton", sheet "4ton"); the main winch tables are the same on every sheet.
+// Usually one workbook = one crane model, each sheet holding the same layout for ONE aux-winch
+// capacity (e.g. sheet "3ton", sheet "4ton"); the main winch tables are the same on every sheet.
+// Some workbooks instead keep one MODEL per sheet (e.g. a file with every model of one tonnage class);
+// those are imported sheet by sheet with { sheet } (see chartSheets / sheetsAreModels).
 //
 // Per sheet:
 //   "1. 후방 ( 332˚ ~ 28˚)"                 <- area title (number, name, angle ranges)
@@ -122,12 +124,30 @@ function parseSheet(sh, warnings) {
   return { sh, cell, blocks, auxLabelText };
 }
 
-export async function importTemplateXlsx(buf, fileName = '') {
-  const wb = await readXlsx(buf);
+export async function importTemplateXlsx(buf, fileName = '', opts = {}) {
+  return importTemplateWorkbook(await readXlsx(buf), fileName, opts);
+}
+
+/** Names of the sheets that hold a chart (in workbook order). */
+export function chartSheets(wb) {
+  return wb.sheets.filter((sh) => parseSheet(sh, [])).map((sh) => sh.name);
+}
+/** Model name written in a sheet name: 'AB1234' → 'AB1234', 'AB1234D, 1235D' → 'AB1234D'. */
+export const sheetModelName = (name) => (String(name).match(MODEL_TOKEN) || [])[1] || '';
+/** Do these chart sheets look like separate models (each named after one) rather than aux capacities? */
+export function sheetsAreModels(names) {
+  if (names.length < 2) return false;
+  const models = names.map(sheetModelName);
+  return models.every(Boolean) && names.every((n) => !capacityFrom(n)) && new Set(models).size === names.length;
+}
+
+/** Import a parsed workbook: every chart sheet into one model, or only `sheet` (one model per sheet). */
+export function importTemplateWorkbook(wb, fileName = '', { sheet = null } = {}) {
   if (!wb.sheets.length) throw new Error('시트가 없습니다.');
   const warnings = [];
   const sheets = [];
   for (const sh of wb.sheets) {
+    if (sheet !== null && sh.name !== sheet) continue;
     const p = parseSheet(sh, warnings);
     if (p) sheets.push(p);
     else warnings.push(`시트 '${sh.name}'에는 정격하중표 양식이 없어 건너뜀`);

@@ -447,6 +447,13 @@ table.res-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .sheet-tbl { margin: 10px 0; }
 .sheet-tbl p { margin: 2px 0 6px; font-size: 12px; }
 .report .fld { margin-bottom: 10px; }
+/* 엑셀 가져오기 — one model per sheet */
+.dlg:has(.sheet-models) { max-width: min(860px, 94vw); }
+.sheet-models table.mini td { vertical-align: top; padding: 5px 6px; }
+.sheet-models .inp { width: 150px; }
+.sheet-models .sm-db { display: block; margin-top: 3px; color: var(--green); font-size: 11.5px; }
+.sheet-models .sm-db.bad { color: #9A6406; }
+.sheet-models .ng-t { color: var(--red); font-weight: 700; }
 .variant-box { background: var(--steel2); border: 1px solid var(--line2); padding: 10px 12px; margin: 0 0 12px; }
 
 /* ---------------------------------------------------------------- 제품 DB (admin) */
