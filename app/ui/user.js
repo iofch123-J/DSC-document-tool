@@ -495,13 +495,18 @@ function renderView(app, main, m, notes, U, onPaint) {
       const top = maxLoad(wk);
       if (table && nHigh > 0 && nBase > 0 && nBase < nHigh && top) {
         const baseMax = Math.floor((top / nHigh) * nBase);
+        // pin the column widths while held, so the shorter numbers don't make the columns shift
+        const firstRow = () => [...(table.querySelector('tbody tr')?.children || [])];
         const show = (alt) => {
+          if (alt) for (const c of firstRow()) { c.style.boxSizing = 'border-box'; c.style.width = `${c.getBoundingClientRect().width}px`; }
           fallsBox.textContent = alt ? fl.base : fl.high;
           fallsBox.classList.toggle('down', alt);
           for (const td of table.querySelectorAll('td[data-v]')) {
             const v = Number(td.dataset.v);
             td.textContent = (alt ? Math.min(v, baseMax) : v).toLocaleString('en-US');
+            td.classList.toggle('hl', !alt);          // at the base falls these are ordinary cells
           }
+          if (!alt) for (const c of firstRow()) { c.style.width = ''; c.style.boxSizing = ''; }
         };
         fallsBox.classList.add('hold');
         fallsBox.addEventListener('pointerdown', (e) => { e.preventDefault(); fallsBox.setPointerCapture?.(e.pointerId); show(true); });
