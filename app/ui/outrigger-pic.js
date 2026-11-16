@@ -30,12 +30,14 @@ export function outriggerPicture(pct) {
   const BEAM = '#8E9DAD', BEAM_E = '#6B7A8B';   // the beam is grey like the top view's outrigger beams
   const beam = all ? BEAM : BLUE;                // jack: blue (grey for 'all')
   const edge = all ? BEAM_E : BLUE_D;
-  const out = [`<image href="${TRUCK_SRC}" x="52" y="40" width="528" height="455"/>`];
+  // the truck at 90 %, shrunk towards where the beam leaves it, standing on the same ground line
+  const TS = 0.9, ax = xr, ay = G;
+  const out = [`<image href="${TRUCK_SRC}" x="${f(ax + (52 - ax) * TS)}" y="${f(ay + (40 - ay) * TS)}" width="${f(528 * TS)}" height="${f(455 * TS)}"/>`];
   const P = (d, fill, stroke = null, sw = 0, extra = '') => out.push(
     `<path d="${d}" fill="${fill || 'none'}"${stroke ? ` stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round"` : ''}${extra}/>`);
 
   // ground (continues the drawing's own line) and the 50 % / 100 % marks, labelled under the ground
-  P(line(575, G, 880, G), null, '#55595E', 2.2);
+  P(line(52, G, 880, G), null, '#55595E', 2.2);           // full width, as before the truck was shrunk
   for (const [frac, lab] of [[0.5, '50%'], [1, '100%']]) {
     const x = X0 + L * frac;
     P(line(x, 236, x, G + 8), null, '#C2CBD5', 3, ' stroke-dasharray="12 10"');
