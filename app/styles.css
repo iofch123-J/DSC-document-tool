@@ -607,7 +607,7 @@ table.res-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .gate-step.now .f-no { background: var(--ci2); color: #fff; }
 .gate-row { display: flex; gap: 8px; align-items: center; min-height: 44px; }
 .gate-emp { flex: 1; font-size: 18px; font-weight: 700; letter-spacing: .04em; height: 44px; }
-.gate-suf { width: 76px; font-size: 18px; font-weight: 700; text-align: center; height: 44px; background: var(--steel2); }
+.gate-suf { flex: none; width: 76px; font-size: 18px; font-weight: 700; height: 44px; background: var(--steel2); display: flex; align-items: center; justify-content: center; color: var(--navy); cursor: default; user-select: none; }   /* fixed suffix, not an input */
 .gate-row .btn.primary { height: 44px; padding: 0 20px; }
 .gate-val { font-size: 20px; letter-spacing: .04em; color: var(--navy); margin-right: auto; }
 .gate-cho { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0; }

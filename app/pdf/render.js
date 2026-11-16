@@ -6,7 +6,7 @@ import {
   conditions, activeWinches, columns, radii, rKey, tableKey, getCell, cellKind,
   isHighFalls, isVariation, lastUsedRowIndex, referenceCondition, auxWinches, winchTitle, winchShort, formatSlew,
 } from '../core/model.js';
-import { areaDiagram, outriggerDiagram } from './diagrams.js';
+import { areaTopView, outriggerFront } from './pictures.js';
 import { validate, issueIndex } from '../core/validate.js';
 
 const PAGE = { w: 841.89, h: 595.28 };
@@ -69,7 +69,8 @@ function firstMarker(model) {
 export async function buildPdf(model, opts) {
   // dist: { to, ctrl, date } for an outside recipient, or { internal: true, viewer, ctrl, date } for in-house use
   // only: { condKey, winch } → just that one page (no cover), e.g. the table on screen in 조회
-  const { PDFLib, fontkit, fonts, mode = 'customer', dist = {}, only = null } = opts;
+  // images: { truck: PNG bytes } — the outrigger picture's truck drawing (pictures.js TRUCK_SRC)
+  const { PDFLib, fontkit, fonts, mode = 'customer', dist = {}, only = null, images = {} } = opts;
   const { PDFDocument, rgb, degrees } = PDFLib;
   const col = (hex) => rgb(parseInt(hex.slice(1, 3), 16) / 255, parseInt(hex.slice(3, 5), 16) / 255, parseInt(hex.slice(5, 7), 16) / 255);
   const K = Object.fromEntries(Object.entries(HEX).map(([k, v]) => [k, col(v)]));
@@ -93,6 +94,11 @@ export async function buildPdf(model, opts) {
     const bytes = typeof atob === 'function' ? Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)) : Uint8Array.from(Buffer.from(b64, 'base64'));
     logo = info.logo.includes('image/png') ? await doc.embedPng(bytes) : await doc.embedJpg(bytes);
   }
+  // raster parts of the pictures (the outrigger picture's truck); without them the rest still draws
+  const IMG = {};
+  for (const [k, bytes] of Object.entries(images)) {
+    try { if (bytes) IMG[k] = await doc.embedPng(bytes); } catch (e) { console.warn(`그림 '${k}'를 넣지 못했습니다`, e); }
+  }
 
   let plan = planPages(model);
   if (only) {
@@ -112,7 +118,7 @@ export async function buildPdf(model, opts) {
 
   for (const pg of plan) {
     const page = doc.addPage([PAGE.w, PAGE.h]);
-    const P = makePen(page, F, K, rgb, degrees);
+    const P = makePen(page, F, K, rgb, degrees, IMG, PDFLib);
     if (pg.type === 'cover') drawCover(P, model, plan, N, logo, dist, coverStats(model));
     else {
       drawHeader(P, model, pg.no, N, logo);
@@ -131,7 +137,7 @@ export async function buildPdf(model, opts) {
 }
 
 // ---------------------------------------------------------------------------------- pen
-function makePen(page, F, K, rgb, degrees) {
+function makePen(page, F, K, rgb, degrees, IMG = {}, ops = null) {
   const H = PAGE.h;
   const measure = (s, f = 'r', size = 9, spacing = 0) => F[f].widthOfTextAtSize(String(s), size) + spacing * Math.max(0, String(s).length - 1);
   const P = {
@@ -185,9 +191,18 @@ function makePen(page, F, K, rgb, degrees) {
       return out;
     },
     shapes(dg, x, y, w) {
-      y -= (dg.y0 || 0) * (w / dg.w); // cropped diagrams start below y = 0
       const s = w / dg.w;
+      // pictures that run past their frame (the area fans) are clipped to it, as on screen
+      const clip = ops?.pushGraphicsState && dg.x0 !== undefined;
+      if (clip) page.pushOperators(ops.pushGraphicsState(), ops.rectangle(x, H - y - dg.h * s, w, dg.h * s), ops.clip(), ops.endPath());
+      x -= (dg.x0 || 0) * s;          // cropped diagrams start right of / below 0
+      y -= (dg.y0 || 0) * s;
       for (const it of dg.items) {
+        if (it.image) {
+          const img = IMG[it.image];
+          if (img) page.drawImage(img, { x: x + it.x * s, y: H - (y + (it.y + it.h) * s), width: it.w * s, height: it.h * s });
+          continue;
+        }
         if (it.text !== undefined) {
           const hex = it.color || HEX.navy;
           P.text(it.text, x + it.x * s, y + it.y * s, {
@@ -199,10 +214,11 @@ function makePen(page, F, K, rgb, degrees) {
         const o = { x, y: H - y, scale: s };
         const c = (hex) => rgb(parseInt(hex.slice(1, 3), 16) / 255, parseInt(hex.slice(3, 5), 16) / 255, parseInt(hex.slice(5, 7), 16) / 255);
         if (it.fill) { o.color = c(it.fill); if (it.opacity !== undefined) o.opacity = it.opacity; }
-        if (it.stroke) { o.borderColor = c(it.stroke); o.borderWidth = it.sw || 1; if (it.dash) o.borderDashArray = [3, 3]; }
+        if (it.stroke) { o.borderColor = c(it.stroke); o.borderWidth = it.sw || 1; if (it.dash) o.borderDashArray = Array.isArray(it.dash) ? it.dash : [3, 3]; }
         if (!it.fill && !it.stroke) continue;
         page.drawSvgPath(it.d, o);
       }
+      if (clip) page.pushOperators(ops.popGraphicsState());
     },
     watermark(s, cx, cy) {
       const size = 25;
@@ -271,10 +287,10 @@ function drawBand(P, y, model, cond, mode, winches) {
     return x + w;
   };
   const ranges = formatSlew(cond.area.ranges, ' ');
-  let x = tile(M.l, areaDiagram(model.settings.areas, cond.area.id), 88, ['작업영역  WORKING AREA', cond.area.name, ranges]);
+  let x = tile(M.l, areaTopView(model.settings.areas, cond.area.id), 95.2, ['작업영역  WORKING AREA', cond.area.name, ranges]);
   const o = cond.outrigger;
   const pct = o ? (o.pct ?? 1) : 'all';
-  const orDg = outriggerDiagram(pct);   // ≈ 59.5 pt tall, width follows the drawing
+  const orDg = outriggerFront(pct);     // ≈ 59.5 pt tall, width follows the drawing (16:10, like the area)
   x = tile(x + 8, orDg, (59.5 * orDg.w) / orDg.h, ['아우트리거  OUTRIGGER', o ? o.name : '전 구간 공통', o ? o.short || '' : '모든 신장 상태 동일']);
 
   // legend
@@ -589,7 +605,7 @@ function drawCover(P, model, plan, N, logo, dist, st) {
   P.rect(RX, ry, RW, 16, { fill: K.steel, stroke: K.line, sw: 0.6 });
   P.text('작업영역 구분 (상면도)', RX + 9, ry + 11, { f: 'b', size: 7.6, color: K.navy });
   P.text('WORKING AREA', RIGHT - 9, ry + 10.8, { f: 'b', size: 6, color: K.muted, spacing: 1.8, align: 'right' });
-  const dg = areaDiagram(S.areas, null);
+  const dg = areaTopView(S.areas, null);
   const dW = RW - 30, dH = (dW * dg.h) / dg.w;
   P.rect(RX, ry + 16, RW, dH + 12, { stroke: K.line, sw: 0.6 });
   P.shapes(dg, RX + 15, ry + 22, dW);

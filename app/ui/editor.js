@@ -7,7 +7,8 @@ import {
   isHighFalls, isVariation, referenceCondition, autoMarkers, rKey, winchTitle,
 } from '../core/model.js';
 import { issueIndex } from '../core/validate.js';
-import { areaDiagram, outriggerDiagram, toSvg } from '../pdf/diagrams.js';
+import { toSvg } from '../pdf/diagrams.js';
+import { areaTopView, outriggerFront } from '../pdf/pictures.js';
 
 const undoStacks = new Map(); // tableKey -> [json snapshots]
 let stopDrag = () => {};
@@ -74,7 +75,7 @@ export function renderEditor(app, el) {
     varToggle,
   );
   const head = h('div', { class: 'ed-head' },
-    h('div', { class: 'ed-icons', html: toSvg(areaDiagram(m.settings.areas, cond.area.id), 'height="46"') + toSvg(outriggerDiagram(cond.outrigger ? cond.outrigger.pct ?? 1 : 'all'), 'height="46"') }),
+    h('div', { class: 'ed-icons', html: toSvg(areaTopView(m.settings.areas, cond.area.id), 'height="46"') + toSvg(outriggerFront(cond.outrigger ? cond.outrigger.pct ?? 1 : 'all'), 'height="46"') }),
     h('div', { class: 'ed-title' },
       h('div', { class: 'ed-cond' }, `${cond.area.name} · ${condName(cond)}`),
       h('div', { class: 'muted' }, (cond.area.ranges || []).map(([a, b]) => `${a}° ~ ${b}°`).join(', '))),

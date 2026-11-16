@@ -13,7 +13,7 @@ const TIRE = '#2B3541';
 const STEEL = '#E4EAF1';
 const BLUE = '#3F6DB5';
 const BLUE_D = '#244C8A';
-const COVER_FILLS = [['#E0940F', 0.55], ['#5F86AE', 0.42], ['#9AAABB', 0.42], ['#7FA37A', 0.42], ['#B07AA1', 0.42]];
+export const COVER_FILLS = [['#E0940F', 0.55], ['#5F86AE', 0.42], ['#9AAABB', 0.42], ['#7FA37A', 0.42], ['#B07AA1', 0.42]];
 
 const rad = (a) => (a * Math.PI) / 180;
 const f = (n) => Math.round(n * 100) / 100;
@@ -274,10 +274,12 @@ export function outriggerDiagram(pct) {
 export function toSvg(dg, attrs = '') {
   const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
   const parts = dg.items.map((it) => {
+    if (it.image) return `<image href="${it.href}" x="${it.x}" y="${it.y}" width="${it.w}" height="${it.h}"/>`;
     if (it.text !== undefined) {
       return `<text x="${it.x}" y="${it.y}" font-size="${it.size}" ${it.bold ? 'font-weight="700"' : ''} fill="${it.color || NAVY}" text-anchor="${it.anchor || 'start'}">${esc(it.text)}</text>`;
     }
-    return `<path d="${it.d}" fill="${it.fill || 'none'}" ${it.opacity !== undefined ? `fill-opacity="${it.opacity}"` : ''} ${it.stroke ? `stroke="${it.stroke}" stroke-width="${it.sw || 1}" stroke-linejoin="round"` : ''} ${it.dash ? 'stroke-dasharray="3 3"' : ''}/>`;
+    const dash = it.dash ? ` stroke-dasharray="${Array.isArray(it.dash) ? it.dash.join(' ') : '3 3'}"` : '';
+    return `<path d="${it.d}" fill="${it.fill || 'none'}" ${it.opacity !== undefined ? `fill-opacity="${it.opacity}"` : ''} ${it.stroke ? `stroke="${it.stroke}" stroke-width="${it.sw || 1}" stroke-linejoin="round"${it.cap ? ' stroke-linecap="round"' : ''}` : ''}${dash}/>`;
   });
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 ${dg.y0 || 0} ${dg.w} ${dg.h}" ${attrs}>${parts.join('')}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${dg.x0 || 0} ${dg.y0 || 0} ${dg.w} ${dg.h}" ${attrs}>${parts.join('')}</svg>`;
 }

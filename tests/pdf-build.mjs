@@ -25,6 +25,7 @@ const fonts = {
   extra: readFileSync(join(root, 'fonts/Pretendard-ExtraBold.ttf')),
 };
 const t0 = Date.now();
-const bytes = await buildPdf(model, { PDFLib, fontkit, fonts, mode, dist: to ? { to, ctrl, date: new Date().toISOString().slice(0, 10) } : {} });
+const images = { truck: readFileSync(join(root, 'img/outrigger-truck.png')) };
+const bytes = await buildPdf(model, { PDFLib, fontkit, fonts, images, mode, dist: to ? { to, ctrl, date: new Date().toISOString().slice(0, 10) } : {} });
 writeFileSync(out, bytes);
 console.log(`pages ${planPages(model).length} · ${(bytes.length / 1024).toFixed(0)} KB · ${Date.now() - t0} ms -> ${out}`);

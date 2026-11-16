@@ -5,7 +5,8 @@ import {
   cleanRadii, usedRadii, rKey,
   auxWinches, addAuxWinch, winchTitle,
 } from '../core/model.js';
-import { areaDiagram, outriggerDiagram, toSvg, areaDrawR } from '../pdf/diagrams.js';
+import { toSvg, areaDrawR } from '../pdf/diagrams.js';
+import { areaTopView, outriggerFront } from '../pdf/pictures.js';
 
 export function renderSettings(app, el) {
   const m = app.model;
@@ -251,7 +252,7 @@ export function renderSettings(app, el) {
 
   // ---------------------------------------------------------------- 5. areas
   const preview = h('div', { class: 'diagram' });
-  const paintPreview = () => { preview.innerHTML = toSvg(areaDiagram(S.areas, null), 'width="100%"'); };
+  const paintPreview = () => { preview.innerHTML = toSvg(areaTopView(S.areas, null), 'width="100%"'); };
   paintPreview();
   const move = (arr, i, d) => { const j = i + d; if (j < 0 || j >= arr.length) return; [arr[i], arr[j]] = [arr[j], arr[i]]; app.changed(); rerender(); };
   const areaRows = S.areas.map((a, i) => {
@@ -296,7 +297,7 @@ export function renderSettings(app, el) {
       type: 'number', class: 'inp num', min: 5, max: 100, value: Math.round((o.pct ?? 1) * 100),
       onchange: (e) => { o.pct = Math.max(0.05, Math.min(1, Number(e.target.value) / 100)); app.changed(); rerender(); },
     })),
-    h('td', { class: 'or-icon', html: toSvg(outriggerDiagram(o.pct ?? 1), 'height="52"') }),
+    h('td', { class: 'or-icon', html: toSvg(outriggerFront(o.pct ?? 1), 'height="52"') }),
     h('td', { class: 'nowrap' },
       h('button', { class: 'btn sm', onclick: () => move(S.outriggers, i, -1) }, '↑'),
       h('button', { class: 'btn sm', onclick: () => move(S.outriggers, i, 1) }, '↓'),

@@ -46,16 +46,13 @@ export function renderGate(app, main, auth, onEnter) {
     onkeydown: (e) => { if (e.key === 'Enter') next(); },
     oninput: () => { if (st.err) say(''); },
   });
-  const suf = h('input', {
-    type: 'text', class: 'inp gate-suf', value: auth.suffix, autocomplete: 'off', 'aria-label': '사번 뒷자리', spellcheck: false,
-    onkeydown: (e) => { if (e.key === 'Enter') next(); },
-    oninput: () => { if (st.err) say(''); },
-  });
+  // the 사번 suffix (e.g. HA) is fixed by the administrator — shown, not editable
+  const suf = h('div', { class: 'inp gate-suf', 'aria-label': `사번 뒷자리 ${auth.suffix} (고정)`, title: '사번 뒷자리는 고정입니다' }, auth.suffix);
 
   function restart(err = '') {
     st.emp = ''; st.len = 0; st.seq = []; st.busy = false;
     digits.value = '';
-    suf.value = auth.suffix;
+    suf.textContent = auth.suffix;
     say(err);
     paint();
     digits.focus();
@@ -64,7 +61,7 @@ export function renderGate(app, main, auth, onEnter) {
   async function next() {
     if (st.busy) return;
     if (!digits.value.trim()) { say('사번을 입력하세요.'); digits.focus(); return; }
-    const emp = empNo(digits.value, suf.value);
+    const emp = empNo(digits.value, auth.suffix);
     st.busy = true;
     say('확인 중…', 'info');
     try {
