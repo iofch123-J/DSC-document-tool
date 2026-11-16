@@ -141,9 +141,16 @@ export function fmtLen(len) {
   return Number.isInteger(n) ? n.toFixed(1) : String(Math.round(n * 1000) / 1000);
 }
 
-/** Radius rows as numbers (rounded to 0.1 m to avoid float drift). */
+/** Radius values cleaned up: numbers ≥ 0, rounded to 0.1 m, unique, ascending. */
+export const cleanRadii = (vs) => [...new Set(vs.map(Number).filter((v) => Number.isFinite(v) && v >= 0)
+  .map((v) => Math.round(v * 10) / 10))].sort((a, b) => a - b);
+
+/** Radius rows as numbers (rounded to 0.1 m to avoid float drift). An explicit row list — the
+ *  Excel's own rows when they are not evenly spaced (2 · 2.5 · 3 · 4 …) — wins over start / end / step. */
 export function radii(model) {
-  const { start, end, step } = model.settings.radius;
+  const R = model.settings.radius || {};
+  if (Array.isArray(R.list) && R.list.length) return cleanRadii(R.list);
+  const { start, end, step } = R;
   const out = [];
   const s = Number(start), e = Number(end), st = Number(step);
   if (!(st > 0) || !(e >= s)) return out;
@@ -156,6 +163,17 @@ export function radii(model) {
 }
 
 export const rKey = (r) => Number(r).toFixed(1);
+
+/** Every radius that holds a value in any table (also rows the current row settings don't show). */
+export function usedRadii(model) {
+  const used = new Set();
+  for (const t of Object.values(model.tables || {})) {
+    for (const col of Object.values(t || {})) {
+      for (const [k, v] of Object.entries(col || {})) if (v !== null && v !== undefined && v !== '') used.add(k);
+    }
+  }
+  return cleanRadii([...used]);
+}
 
 /** All conditions (area × outrigger), in document order. */
 export function conditions(model) {

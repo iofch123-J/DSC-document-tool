@@ -2,6 +2,7 @@
 import { h, clear, toast, confirmBox, dialog, pickFile } from './dom.js';
 import {
   newBoom, uid, settingsProblems, orphanCells, pruneOrphans, parseRanges, conditions, radii, columns, activeWinches,
+  cleanRadii, usedRadii, rKey,
   auxWinches, addAuxWinch, winchTitle,
 } from '../core/model.js';
 import { areaDiagram, outriggerDiagram, toSvg, areaDrawR } from '../pdf/diagrams.js';
@@ -109,12 +110,46 @@ export function renderSettings(app, el) {
   );
 
   // ---------------------------------------------------------------- 2. radius
-  const secRadius = section('2', '작업반경 (표의 행)', '시작·끝·간격으로 표의 행을 만듭니다. PDF에는 값이 있는 마지막 행까지만 인쇄됩니다.',
-    h('div', { class: 'grid3 narrow' },
-      field('시작 (m)', num(S.radius, 'start')),
-      field('끝 (m)', num(S.radius, 'end')),
-      field('간격 (m)', num(S.radius, 'step')),
-    ));
+  // either start · end · step, or the rows one by one (like the Excel, when they are not evenly spaced)
+  const R = S.radius;
+  const listMode = Array.isArray(R.list) && R.list.length > 0;
+  const fmtR = (r) => rKey(r).replace(/\.0$/, '');
+  const onlyUsed = h('button', {
+    class: 'btn sm',
+    title: '하중 표에 값이 있는 작업반경만 행으로 남깁니다 (빈 행 삭제, 숨어 있던 행 표시)',
+    onclick: () => {
+      const used = usedRadii(m);
+      if (!used.length) { toast('값이 있는 행이 없습니다.', 'warn'); return; }
+      R.list = used; app.changed(); rerender();
+      toast(`값이 있는 ${used.length}개 행으로 맞췄습니다.`, 'ok');
+    },
+  }, '값이 있는 행만 쓰기');
+  const secRadius = section('2', '작업반경 (표의 행)',
+    listMode ? '엑셀 표처럼 행을 하나씩 지정합니다 (간격이 일정하지 않은 표). PDF에는 값이 있는 마지막 행까지만 인쇄됩니다.'
+      : '시작·끝·간격으로 표의 행을 만듭니다. PDF에는 값이 있는 마지막 행까지만 인쇄됩니다.',
+    listMode
+      ? h('div', null,
+        field('행 목록 (m, 쉼표로 구분)', h('input', {
+          type: 'text', class: 'inp', value: radii(m).map(fmtR).join(', '),
+          onchange: (e) => {
+            const vs = cleanRadii(e.target.value.split(/[,\s]+/).filter(Boolean));
+            if (vs.length) R.list = vs;
+            app.changed(); rerender();
+          },
+        })),
+        h('div', { class: 'actions' }, onlyUsed,
+          h('button', {
+            class: 'btn sm',
+            onclick: () => { const rs = radii(m); delete R.list; R.start = rs[0]; R.end = rs[rs.length - 1]; app.changed(); rerender(); },
+          }, '일정 간격으로 바꾸기')))
+      : h('div', null,
+        h('div', { class: 'grid3 narrow' },
+          field('시작 (m)', num(S.radius, 'start')),
+          field('끝 (m)', num(S.radius, 'end')),
+          field('간격 (m)', num(S.radius, 'step')),
+        ),
+        h('div', { class: 'actions' }, onlyUsed,
+          h('button', { class: 'btn sm', onclick: () => { R.list = radii(m); app.changed(); rerender(); } }, '행을 직접 지정'))));
 
   // ---------------------------------------------------------------- 3/4. winches
   const winchBody = (w) => {

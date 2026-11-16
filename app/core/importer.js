@@ -284,11 +284,16 @@ export function importTemplateWorkbook(wb, fileName = '', { sheet = null } = {})
     thresholds[key] = cfg.falls.threshold;
   }
 
+  // radius rows: start / end / step when the Excel's rows are evenly spaced; otherwise (2 · 2.5 · 3 · 4 …,
+  // 2.6 · 3 · 4 …) exactly the Excel's rows, so no empty in-between rows and no hidden ones
   const rs = [...radiiSeen].sort((a, b) => a - b);
   if (rs.length) {
-    let step = Infinity;
-    for (let i = 1; i < rs.length; i++) step = Math.min(step, round(rs[i] - rs[i - 1], 2));
-    m.settings.radius = { start: rs[0], end: rs[rs.length - 1], step: Number.isFinite(step) ? step : 1 };
+    const gaps = rs.slice(1).map((v, i) => round(v - rs[i], 2));
+    const count = new Map();
+    for (const g of gaps) count.set(g, (count.get(g) || 0) + 1);
+    const step = gaps.length ? [...count].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0][0] : 1;
+    m.settings.radius = { start: rs[0], end: rs[rs.length - 1], step };
+    if (gaps.some((g) => g !== step)) m.settings.radius.list = rs;
   }
 
   return {
