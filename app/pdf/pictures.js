@@ -3,8 +3,8 @@
 //  · areaTopView(areas, active)   top view of the cargo crane truck (front to the left) over the working-area
 //                                 fans; active = area id to highlight, or null for the cover (every area
 //                                 coloured and labelled). The truck is laid out after the general-arrangement
-//                                 drawing (chassis only: frame, wheels, both outrigger pairs) in the old style:
-//                                 white cab, the crane in blue with its boom slewed 15° and run out.
+//                                 drawing, in the old style: white cab, see-through white bed, the crane in
+//                                 blue with its boom slewed 15° and run out.
 //  · outriggerFront(pct)          front view: the truck line drawing (raster, TRUCK_SRC) with the outrigger
 //                                 drawn on top at the extension pct (0…1), or 'all' when it doesn't matter.
 //
@@ -54,13 +54,14 @@ export function areaTopView(areas, active = null) {
     for (const [a1, a2] of a.ranges || []) P(sectorPath(CX, CY, RMAX * areaDrawR(a, i), a1, a2), fill, '#FFFFFF', 10, { opacity: op });
   });
 
-  // the truck, laid out after the general-arrangement drawing (chassis only, no bed): u along the truck
-  // (+ = rear) and v across it (+ = down), both measured from the slewing centre
+  // the truck, laid out after the general-arrangement drawing: u along the truck (+ = rear) and v across
+  // it (+ = down), both measured from the slewing centre
   const X = (u) => CX + u, Y = (v) => CY + v;
   const B = (u1, v1, u2, v2) => rect(X(Math.min(u1, u2)), Y(Math.min(v1, v2)), Math.abs(u2 - u1), Math.abs(v2 - v1));
   const BR = (u1, v1, u2, v2, r) => rrect(X(Math.min(u1, u2)), Y(Math.min(v1, v2)), Math.abs(u2 - u1), Math.abs(v2 - v1), r);
   const HW = 86;                  // half width of the cab and the wheels
   const REAR = 622;               // end of the frame
+  const BH = 78;                  // half width of the bed (the wheels show a little beyond it)
 
   // front outriggers: just behind the cab, staggered (the upper one a little further back), two-stage beams
   const frontOR = (uc, up) => {
@@ -88,14 +89,11 @@ export function areaTopView(areas, active = null) {
   rearOR(527, true);
   rearOR(513, false);
 
-  // chassis frame: two rails from the cab to the rear end, cross members, the rear outrigger box
+  // chassis rails from the cab to the rear end (seen between the cab and the bed)
   P(B(-90, -32, REAR, -20), '#7A8899');
   P(B(-90, 20, REAR, 32), '#7A8899');
-  for (const u of [120, 240, 400, REAR - 6]) P(B(u, -20, u + 8, 20), '#9AA7B5');
-  P(B(492, -46, 546, 46), BLUE, BLUE_D, 4);
-  P(B(500, -38, 538, 38), null, BLUE_L, 2.5);
 
-  // wheels: front axle beside the crane base, a single axle, then a dual tandem
+  // wheels: front axle beside the crane base, a single axle, then a dual tandem under the bed
   const tyre = (u1, v1, u2, v2) => P(BR(u1, v1, u2, v2, 7), '#2B3541');
   const single = (uc) => { tyre(uc - 37, -HW - 2, uc + 37, -HW + 24); tyre(uc - 37, HW - 24, uc + 37, HW + 2); };
   const dual = (uc) => {
@@ -105,6 +103,11 @@ export function areaTopView(areas, active = null) {
   single(268);
   dual(358);
   dual(452);
+
+  // cargo bed (see-through white) from behind the crane to the rear end: frame, inner wall, floor slats
+  P(B(58, -BH, REAR, BH), '#FFFFFF', INK, 6.5, { opacity: 0.8 });
+  P(B(71, -BH + 13, REAR - 13, BH - 13), null, '#A8B5C3', 3.5);
+  for (let u = 116; u < REAR - 20; u += 48) P(`M ${f(X(u))} ${f(Y(-BH + 16))} V ${f(Y(BH - 16))}`, null, '#D3DBE4', 3);
 
   // cab: the old cab's parts (bumper, windshield, roof panel, hatch, bolts, mirrors, steps, door lines) fitted
   // to the drawing's cab, 154 long × 172 wide
