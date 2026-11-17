@@ -2,8 +2,9 @@
 //
 //  · areaTopView(areas, active)   top view of the cargo crane truck (front to the left) over the working-area
 //                                 fans; active = area id to highlight, or null for the cover (every area
-//                                 coloured and labelled). Redrawn from a product render: simplified cab,
-//                                 see-through bed, the crane in blue with its boom slewed 15° and run out.
+//                                 coloured and labelled). The truck is laid out after the general-arrangement
+//                                 drawing (chassis only: frame, wheels, both outrigger pairs) in the old style:
+//                                 white cab, the crane in blue with its boom slewed 15° and run out.
 //  · outriggerFront(pct)          front view: the truck line drawing (raster, TRUCK_SRC) with the outrigger
 //                                 drawn on top at the extension pct (0…1), or 'all' when it doesn't matter.
 //
@@ -53,82 +54,109 @@ export function areaTopView(areas, active = null) {
     for (const [a1, a2] of a.ranges || []) P(sectorPath(CX, CY, RMAX * areaDrawR(a, i), a1, a2), fill, '#FFFFFF', 10, { opacity: op });
   });
 
-  // outriggers: front pair (two-stage, from the crane base) and rear pair (from under the bed), staggered
-  const front = (x, up) => {
+  // the truck, laid out after the general-arrangement drawing (chassis only, no bed): u along the truck
+  // (+ = rear) and v across it (+ = down), both measured from the slewing centre
+  const X = (u) => CX + u, Y = (v) => CY + v;
+  const B = (u1, v1, u2, v2) => rect(X(Math.min(u1, u2)), Y(Math.min(v1, v2)), Math.abs(u2 - u1), Math.abs(v2 - v1));
+  const BR = (u1, v1, u2, v2, r) => rrect(X(Math.min(u1, u2)), Y(Math.min(v1, v2)), Math.abs(u2 - u1), Math.abs(v2 - v1), r);
+  const HW = 86;                  // half width of the cab and the wheels
+  const REAR = 622;               // end of the frame
+
+  // front outriggers: just behind the cab, staggered (the upper one a little further back), two-stage beams
+  const frontOR = (uc, up) => {
     const s = up ? -1 : 1;
-    const y0 = up ? 240 : 470;                  // leaves the crane base here
-    const yc = y0 + s * 46, yi = y0 + s * 136;  // collar, end of the inner beam
-    P(rect(x - 1.5, Math.min(y0, yc), 21, 46), BEAM, BEAM_E, 3.5);
-    P(rect(x + 2, Math.min(yc, yi), 14, Math.abs(yi - yc)), BEAM, BEAM_E, 3.5);
-    P(rect(x - 4, yc - 5, 27, 10), BLUE, BLUE_D, 3.5);
-    const py = up ? yi - 27 : yi - 2;
-    P(rrect(x - 7, py, 34, 29, 4), BLUE, BLUE_D, 3.5);
-    P(rect(x + 2, py + 7, 16, 15), BLUE_D);
+    const v0 = s * 50, vc = s * 146, vi = s * 232;   // under the crane base, collar, end of the inner beam
+    P(B(uc - 10.5, v0, uc + 10.5, vc), BEAM, BEAM_E, 3.5);
+    P(B(uc - 7, vc, uc + 7, vi), BEAM, BEAM_E, 3.5);
+    P(B(uc - 13.5, vc - 5, uc + 13.5, vc + 5), BLUE, BLUE_D, 3.5);
+    const pv = up ? vi - 27 : vi - 2;
+    P(rrect(X(uc - 17), Y(pv), 34, 29, 4), BLUE, BLUE_D, 3.5);
+    P(rect(X(uc - 8), Y(pv + 7), 16, 15), BLUE_D);
   };
-  front(300, true);
-  front(317, false);
-  const rear = (x, up) => {
-    const yb = up ? 236 : 466, ye = up ? 130 : 570;
-    P(rect(x, Math.min(yb, ye), 18, Math.abs(yb - ye)), BEAM, BEAM_E, 3.5);
-    const py = up ? ye - 24 : ye - 2;
-    P(rrect(x - 8, py, 34, 26, 4), BLUE, BLUE_D, 3.5);
-    P(rect(x + 1, py + 6, 16, 14), BLUE_D);
+  frontOR(-15, true);
+  frontOR(-33, false);
+  // rear outriggers: behind the last axle, staggered, run out of their box half as far again as the
+  // drawing shows (150 %)
+  const rearOR = (uc, up) => {
+    const s = up ? -1 : 1;
+    const vb = s * 40, ve = s * (46 + 82 * 1.5);
+    P(B(uc - 9, vb, uc + 9, ve), BEAM, BEAM_E, 3.5);
+    const pv = up ? ve - 24 : ve - 2;
+    P(rrect(X(uc - 17), Y(pv), 34, 26, 4), BLUE, BLUE_D, 3.5);
+    P(rect(X(uc - 8), Y(pv + 6), 16, 14), BLUE_D);
   };
-  rear(800, true);
-  rear(785, false);
+  rearOR(527, true);
+  rearOR(513, false);
 
-  // tyres: front axle under the cab, rear tandem under the bed (a little wider than the body)
-  for (const x of [104, 602, 722]) for (const y of [214, 454]) P(rrect(x, y, 70, 32, 8), '#2B3541');
-  // chassis rails between cab and bed
-  P(rect(282, 296, 120, 14), '#7A8899');
-  P(rect(282, 390, 120, 14), '#7A8899');
+  // chassis frame: two rails from the cab to the rear end, cross members, the rear outrigger box
+  P(B(-90, -32, REAR, -20), '#7A8899');
+  P(B(-90, 20, REAR, 32), '#7A8899');
+  for (const u of [120, 240, 400, REAR - 6]) P(B(u, -20, u + 8, 20), '#9AA7B5');
+  P(B(492, -46, 546, 46), BLUE, BLUE_D, 4);
+  P(B(500, -38, 538, 38), null, BLUE_L, 2.5);
 
-  // cargo bed (see-through white): frame, inner wall, floor slats
-  P(rect(397, 230, 515, 240), '#FFFFFF', INK, 6.5, { opacity: 0.8 });
-  P(rect(410, 243, 489, 214), null, '#A8B5C3', 3.5);
-  for (let x = 455; x < 900; x += 48) P(`M ${x} 246 V 454`, null, '#D3DBE4', 3);
+  // wheels: front axle beside the crane base, a single axle, then a dual tandem
+  const tyre = (u1, v1, u2, v2) => P(BR(u1, v1, u2, v2, 7), '#2B3541');
+  const single = (uc) => { tyre(uc - 37, -HW - 2, uc + 37, -HW + 24); tyre(uc - 37, HW - 24, uc + 37, HW + 2); };
+  const dual = (uc) => {
+    for (const s of [-1, 1]) { tyre(uc - 37, s * (HW + 2), uc + 37, s * (HW - 18)); tyre(uc - 37, s * (HW - 21), uc + 37, s * (HW - 41)); }
+  };
+  single(42);
+  single(268);
+  dual(358);
+  dual(452);
 
-  // cab: body, front bumper, windshield edge, raised roof panel, hatch, bolts, mirrors, steps, door lines
-  P(rrect(56, 229, 230, 242, 18), '#FFFFFF', INK, 6.5);
-  P(rrect(42, 242, 14, 216, 5), '#5B6B7C');
-  P(rrect(64, 246, 16, 208, 6), '#A9BCCF');
-  P(rrect(92, 248, 182, 204, 12), null, '#8A99AA', 3.5);
-  P(rrect(104, 304, 54, 90, 9), '#E4EAF1', '#8A99AA', 3.5);
-  for (const [x, y] of [[112, 270], [256, 270], [112, 430], [256, 430]]) P(circle(x, y, 6.5), '#5B6B7C');
+  // cab: the old cab's parts (bumper, windshield, roof panel, hatch, bolts, mirrors, steps, door lines) fitted
+  // to the drawing's cab, 154 long × 172 wide
+  const cx0 = X(-230), cy0 = Y(-HW), sx = 154 / 230, sy = (2 * HW) / 242;
+  const c = (x, y) => [cx0 + (x - 56) * sx, cy0 + (y - 229) * sy];
+  const crr = (x, y, w, h, r) => { const [a, b] = c(x, y); return rrect(a, b, w * sx, h * sy, r); };
+  const cl = (x1, y1, x2, y2) => { const [a, b] = c(x1, y1); const [p, q] = c(x2, y2); return `M ${f(a)} ${f(b)} L ${f(p)} ${f(q)}`; };
+  P(crr(56, 229, 230, 242, 16), '#FFFFFF', INK, 6.5);
+  P(crr(40, 242, 16, 216, 5), '#5B6B7C');
+  P(crr(64, 246, 18, 208, 6), '#A9BCCF');
+  P(crr(94, 248, 180, 204, 10), null, '#8A99AA', 3.5);
+  P(crr(106, 304, 58, 90, 8), '#E4EAF1', '#8A99AA', 3.5);
+  for (const [x, y] of [[114, 268], [254, 268], [114, 432], [254, 432]]) { const [a, b] = c(x, y); P(circle(a, b, 5), '#5B6B7C'); }
   for (const sgn of [-1, 1]) {
     const yE = sgn < 0 ? 229 : 471;
-    P(`M 104 ${yE} L 92 ${yE + sgn * 24}`, null, INK, 5);
-    P(rrect(80, sgn < 0 ? yE - 40 : yE + 22, 26, 18, 4), INK);
-    P(rrect(186, sgn < 0 ? yE - 10 : yE - 2, 44, 12, 4), '#C9D2DC', '#6B7A8B', 3);
-    P(`M 152 ${yE} V ${yE - sgn * 18}`, null, '#8A99AA', 3.5);
+    P(cl(106, yE, 92, yE + sgn * 30), null, INK, 4.5);
+    P(crr(76, sgn < 0 ? yE - 52 : yE + 26, 32, 26, 4), INK);
+    P(crr(184, sgn < 0 ? yE - 12 : yE - 2, 50, 14, 4), '#C9D2DC', '#6B7A8B', 3);
+    P(cl(150, yE, 150, yE - sgn * 22), null, '#8A99AA', 3.5);
   }
 
-  // crane base: sub-frame, outrigger boxes, the two cylinders, slewing ring and turret
-  P(rrect(292, 258, 108, 184, 8), BLUE_D, BLUE_DD, 4);
-  P(rect(288, 230, 44, 44), BLUE, BLUE_D, 4);
-  P(rect(306, 402, 38, 70), BLUE, BLUE_D, 4);
-  for (const y of [226, 410]) {
-    P(rrect(352, y, 46, 62, 8), BLUE, BLUE_D, 4);
-    P(rect(358, y + 8, 7, 46), BLUE_L);
-    P(rect(355, y === 226 ? y + 2 : y + 52, 40, 8), STEEL, STEEL_D, 2.5);
+  // crane base: sub-frame, the two outrigger boxes, the lifting cylinders, hoses, slewing ring and turret
+  P(BR(-50, -62, 54, 62, 8), BLUE_D, BLUE_DD, 4);
+  P(B(-37, -80, 7, -46), BLUE, BLUE_D, 4);          // upper outrigger box (its beam at u −15)
+  P(B(-52, 46, -14, 80), BLUE, BLUE_D, 4);          // lower outrigger box (its beam at u −33)
+  for (const s of [-1, 1]) {
+    const v1 = s < 0 ? -82 : 40;
+    P(BR(12, v1, 50, v1 + 42, 7), BLUE, BLUE_D, 4);
+    P(B(17, v1 + 7, 23, v1 + 35), BLUE_L);
+    P(B(14, s < 0 ? v1 + 2 : v1 + 33, 48, s < 0 ? v1 + 9 : v1 + 40), STEEL, STEEL_D, 2.5);
   }
-  P(rect(384, 300, 16, 100), BLUE, BLUE_D, 4);
-  for (const d of ['M 300 262 C 300 290 316 300 330 316', 'M 314 258 C 318 286 334 296 346 310',
-    'M 292 272 C 284 320 284 390 296 440', 'M 300 270 C 294 320 294 384 306 436']) P(d, null, INK, 4);   // hydraulic hoses
-  P(circle(CX, CY, 46), BLUE, BLUE_D, 4.5);
-  P(circle(CX, CY, 36), null, BLUE_D, 3.5);
-  for (let k = 0; k < 16; k++) { const t = rad(k * 22.5 + 11); P(circle(CX + 41 * Math.cos(t), CY + 41 * Math.sin(t), 2.6), '#D6DEE8'); }
+  P(B(38, -30, 52, 30), BLUE, BLUE_D, 4);
+  for (const pts of [[[-42, -58], [-42, -40], [-26, -32], [-14, -24]], [[-30, -60], [-26, -42], [-12, -36], [0, -28]],
+    [[-46, -50], [-54, -18], [-54, 22], [-44, 54]], [[-40, -52], [-46, -18], [-46, 18], [-36, 52]]]) {
+    P(`M ${f(X(pts[0][0]))} ${f(Y(pts[0][1]))} C ${pts.slice(1).map(([u, v]) => `${f(X(u))} ${f(Y(v))}`).join(' ')}`, null, INK, 3.5);   // hydraulic hoses
+  }
+  P(circle(CX, CY, 39), BLUE, BLUE_D, 4.5);
+  P(circle(CX, CY, 30), null, BLUE_D, 3.5);
+  for (let k = 0; k < 16; k++) { const t = rad(k * 22.5 + 11); P(circle(CX + 34.5 * Math.cos(t), CY + 34.5 * Math.sin(t), 2.3), '#D6DEE8'); }
 
   // boom: slewed 15° counter-clockwise and run out to ~130 % of its stowed length — laid out along the
-  // truck, then every point turned about the slewing centre (no transforms, so the PDF can draw it too)
+  // truck (widths × 0.86 to suit the narrower truck), then every point turned about the slewing centre
+  // (no transforms, so the PDF can draw it too)
+  const BW = 0.86;
   const th = rad(15), co = Math.cos(th), si = Math.sin(th);
   const rot = ([x, y]) => [CX + (x - CX) * co + (y - CY) * si, CY - (x - CX) * si + (y - CY) * co];
-  const rbox = (x, y, w, h) => poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]].map(rot));
-  const rcircle = (x, y, r) => { const [a, b] = rot([x, y]); return circle(a, b, r); };
-  P(rbox(312, 328, 62, 44), BLUE_D, BLUE_DD, 4);               // foot on the turret
+  const rbox = (x, y, w, h) => { const y0 = CY + (y - CY) * BW, hh = h * BW; return poly([[x, y0], [x + w, y0], [x + w, y0 + hh], [x, y0 + hh]].map(rot)); };
+  const rcircle = (x, y, r) => { const [a, b] = rot([x, CY + (y - CY) * BW]); return circle(a, b, r); };
+  P(rbox(316, 328, 56, 44), BLUE_D, BLUE_DD, 4);               // foot on the turret
   P(rbox(318, 336, 436, 28), BLUE, BLUE_D, 4);                  // base section
   P(rbox(330, 342, 414, 4), BLUE_L);
-  P(rcircle(328, 350, 7), '#D6DEE8', BLUE_D, 3);
+  P(rcircle(328, 350, 6), '#D6DEE8', BLUE_D, 3);
   P(rbox(754, 338, 140, 24), BLUE, BLUE_D, 3.5);                // 2nd section, out
   P(rbox(764, 343, 120, 3), BLUE_L);
   P(rbox(894, 340, 139, 20), BLUE, BLUE_D, 3.5);                // 3rd section, out
@@ -137,7 +165,7 @@ export function areaTopView(areas, active = null) {
   P(rbox(1042, 344, 8, 12), BLUE_D);
   P(rbox(1057, 344, 8, 12), BLUE_D);
   P(rbox(1081, 333, 14, 34), BLUE_L, BLUE_D, 3.5);
-  { const [a, b] = rot([1095, 341]); const [c, d] = rot([1095, 359]); P(`M ${f(a)} ${f(b)} A 9 9 0 0 1 ${f(c)} ${f(d)} Z`, INK); }   // hook
+  { const [a, b] = rot([1095, CY - 8 * BW]); const [p, q] = rot([1095, CY + 8 * BW]); P(`M ${f(a)} ${f(b)} A 8 8 0 0 1 ${f(p)} ${f(q)} Z`, INK); }   // hook
 
   if (cover) {
     // every area named, with its slew angle as the controller shows it (left/right of the rear)
