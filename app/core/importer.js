@@ -18,12 +18,12 @@
 // from those colours.
 
 import { readXlsx } from './xlsx.js';
-import { newModel, newBoom, newAuxWinch, uid, parseInput, setCell, getCell, tableKey, DEFAULT_NOTES } from './model.js';
+import { newModel, newBoom, newAuxWinch, uid, parseInput, setCell, getCell, tableKey, DEFAULT_NOTES, OR_MIN_PCT } from './model.js';
 
 const OUTRIGGER_NAMES = {
   MAX: { code: 'MAX', name: '완전 신장', short: '100%', pct: 1.0 },
   MID: { code: 'MID', name: '50% 이상 신장', short: 'MID', pct: 0.68 },
-  MIN: { code: 'MIN', name: '50% 이하 신장', short: 'MIN', pct: 0.32 },
+  MIN: { code: 'MIN', name: '50% 이하 신장', short: 'MIN', pct: OR_MIN_PCT },
 };
 
 const round = (n, d = 3) => Math.round(n * 10 ** d) / 10 ** d;

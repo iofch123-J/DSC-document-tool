@@ -4,6 +4,8 @@
 // stores: models (one record per crane model) · meta (key/value: product DB, roster, …)
 //         logs (access history: entry / exit / product views / PDFs, auto-numbered)
 
+import { upgradeModel } from '../core/model.js';
+
 const DB = 'rlc-tool';
 const VERSION = 3;
 
@@ -40,9 +42,9 @@ export const localStore = {
   description: '이 PC의 이 브라우저에만 저장됩니다. 백업 파일로 내보내 두세요.',
   async list() {
     const all = await tx('models', 'readonly', (s) => s.getAll());
-    return all.sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
+    return all.map(upgradeModel).sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
   },
-  get: (id) => tx('models', 'readonly', (s) => s.get(id)),
+  get: async (id) => upgradeModel(await tx('models', 'readonly', (s) => s.get(id))),
   put: (model) => tx('models', 'readwrite', (s) => s.put(plain(model))),
   remove: (id) => tx('models', 'readwrite', (s) => s.delete(id)),
   getMeta: (key) => tx('meta', 'readonly', (s) => s.get(key)),

@@ -76,12 +76,26 @@ export function newModel(name = '새 기종') {
       outriggers: [
         { id: uid('o'), code: 'MAX', name: '완전 신장', short: '100%', pct: 1.0 },
         { id: uid('o'), code: 'MID', name: '50% 이상 신장', short: 'MID', pct: 0.68 },
-        { id: uid('o'), code: 'MIN', name: '50% 이하 신장', short: 'MIN', pct: 0.32 },
+        { id: uid('o'), code: 'MIN', name: '50% 이하 신장', short: 'MIN', pct: OR_MIN_PCT },
       ],
       checks: { areaOrder: true },
     },
     tables: {},
   };
+}
+
+/** Picture position of the MIN outrigger stage: halfway between the 0 % and 50 % marks. */
+export const OR_MIN_PCT = 0.25;
+
+/**
+ * Bring a stored model up to date when it is read (nothing is written back until it is saved).
+ *  · MIN outrigger still on the old picture default (32 %) → 25 %, halfway between the 0 and 50 marks
+ */
+export function upgradeModel(m) {
+  for (const o of m?.settings?.outriggers || []) {
+    if (o.code === 'MIN' && o.pct === 0.32) o.pct = OR_MIN_PCT;
+  }
+  return m;
 }
 
 // settings.winches: { main: {...}, aux: {...}, aux_xxx: {...} }

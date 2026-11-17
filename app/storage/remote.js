@@ -9,6 +9,7 @@
 import { parseProductSheets, PRODUCT_DB } from '../core/catalog.js';
 import { STAFF } from '../core/security.js';
 import { BRAND_LOGO } from '../core/brand.js';
+import { upgradeModel } from '../core/model.js';
 
 export function createRemote(url, { onAuthError } = {}) {
   let token = null;
@@ -36,7 +37,7 @@ export function createRemote(url, { onAuthError } = {}) {
   async function loadModels() {
     if (!models) {
       const out = await call('models.list');
-      models = new Map(out.models.map((m) => [m.id, m]));
+      models = new Map(out.models.map((m) => [m.id, upgradeModel(m)]));
     }
     return models;
   }
