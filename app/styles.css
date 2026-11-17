@@ -236,7 +236,10 @@ table.grid { border-collapse: separate; border-spacing: 0; font-size: 13px; }
 .issues li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--line2); font-size: 13px; }
 
 /* pdf */
-.pdf-layout { display: grid; grid-template-columns: 320px 1fr; gap: 14px; align-items: start; }
+/* the settings card and the preview end on the same line (before a PDF is made the preview is just as tall
+   as the card; after, the card runs down to the end of the preview) */
+.pdf-layout { display: grid; grid-template-columns: 320px 1fr; gap: 14px; align-items: stretch; }
+.pdf-layout > .card { margin-bottom: 0; }
 .pdf-opts h2 { margin: 0 0 12px; font-size: 16px; color: var(--navy); }
 .opt { display: flex; gap: 10px; align-items: flex-start; border: 1.5px solid var(--line); padding: 10px 12px; margin-bottom: 8px; cursor: pointer; }
 .opt.on { border-color: var(--navy); background: var(--steel2); }
@@ -264,16 +267,17 @@ table.grid { border-collapse: separate; border-spacing: 0; font-size: 13px; }
   .po-b .warnbox { margin-top: 0; }
   .po-a .dist { margin-bottom: 0; }
 }
+.pdf-preview:has(.ph) { min-height: 0; }   /* nothing to show yet: a short note, not a tall empty box */
 @media (max-width: 1000px) {
-  .pdf-preview:has(.ph) { height: auto; min-height: 0; }   /* nothing to show yet: a short note, not a tall empty box */
   .pdf-preview .ph { padding: 22px 16px; }
   .pdf-preview .ph p { margin: 4px 0; }
 }
 .pdf-result { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .pdf-result .link-btn { margin-top: 0; }
 .pdf-result .fname { grid-column: 1 / -1; font-size: 12px; overflow-wrap: anywhere; }
-.pdf-preview { background: #fff; border: 1px solid var(--line2); border-radius: var(--r); height: calc(100vh - 210px); min-height: 520px; overflow: hidden; }
-.pdf-preview iframe { width: 100%; height: 100%; border: 0; }
+/* at least a window's height for the PDF, and taller when the card next to it is (the frame fills it) */
+.pdf-preview { position: relative; background: #fff; border: 1px solid var(--line2); border-radius: var(--r); min-height: max(520px, calc(100vh - 210px)); overflow: hidden; }
+.pdf-preview iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 .pdf-preview .ph { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--ink); }
 
 /* dialog & toast */
