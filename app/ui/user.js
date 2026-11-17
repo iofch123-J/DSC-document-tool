@@ -595,9 +595,9 @@ function renderIssue(app, main, m, U) {
   let ack = !v.ng;
   let busy = false;
   const pageSub = h('small');
-  const pageBtn = h('button', { class: 'btn gen-btn', onclick: () => generate('page') },
+  const pageBtn = h('button', { class: 'btn hot gen-btn', onclick: () => generate('page') },
     h('b', null, '조회 페이지만 생성'), pageSub);
-  const allBtn = h('button', { class: 'btn primary gen-btn', onclick: () => generate('all') },
+  const allBtn = h('button', { class: 'btn hot gen-btn', onclick: () => generate('all') },
     h('b', null, '제품 전체 생성'), h('small', null, `표지 1 + 조건별 ${pages.length - 1}페이지`));
   const syncBtns = () => {
     const pg = U.view?.page;
@@ -635,8 +635,8 @@ function renderIssue(app, main, m, U) {
         to, ctrl, date: o.date, file: fname, pages: n,
       });
       result.append(
-        h('button', { class: 'btn primary block', onclick: () => download(blob, fname) }, '내려받기'),
-        h('a', { class: 'btn block link-btn', href: lastUrl, target: '_blank', rel: 'noopener' }, '새 탭에서 열기'),
+        h('button', { class: 'btn hot block', onclick: () => download(blob, fname) }, '내려받기'),
+        h('a', { class: 'btn hot block link-btn', href: lastUrl, target: '_blank', rel: 'noopener' }, '새 탭에서 열기'),
         h('div', { class: 'muted fname' }, fname));
     } catch (e) {
       console.error(e);
